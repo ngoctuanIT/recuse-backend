@@ -3,13 +3,18 @@ import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiProperty, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { IsString, IsNotEmpty } from 'class-validator';
 
 // DTO nhỏ dùng riêng cho Login
 class LoginDto {
     @ApiProperty({ example: 'tuan', description: 'Tên đăng nhập' })
+    @IsString()      // 👈 Báo cho NestJS biết đây là dữ liệu hợp lệ
+    @IsNotEmpty()    // 👈 Báo cho NestJS biết đây là dữ liệu hợp lệ
     username: string;
 
     @ApiProperty({ example: '123456', description: 'Mật khẩu' })
+    @IsString()      // 👈 Báo cho NestJS biết đây là dữ liệu hợp lệ
+    @IsNotEmpty()    // 👈 Báo cho NestJS biết đây là dữ liệu hợp lệ
     password: string;
 }
 
