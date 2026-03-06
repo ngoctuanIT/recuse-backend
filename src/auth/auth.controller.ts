@@ -7,10 +7,10 @@ import { IsString, IsNotEmpty } from 'class-validator';
 
 // DTO nhỏ dùng riêng cho Login
 class LoginDto {
-    @ApiProperty({ example: 'tuan', description: 'Tên đăng nhập' })
+    @ApiProperty({ example: '', description: 'Tên đăng nhập' })
     @IsString()      // 👈 Báo cho NestJS biết đây là dữ liệu hợp lệ
     @IsNotEmpty()    // 👈 Báo cho NestJS biết đây là dữ liệu hợp lệ
-    username: string;
+    phone: string;
 
     @ApiProperty({ example: '123456', description: 'Mật khẩu' })
     @IsString()      // 👈 Báo cho NestJS biết đây là dữ liệu hợp lệ
@@ -33,7 +33,7 @@ export class AuthController {
     @Post('login')
     @ApiOperation({ summary: 'Đăng nhập lấy Access Token' })
     signIn(@Body() signInDto: LoginDto) {
-        return this.authService.signIn(signInDto.username, signInDto.password);
+        return this.authService.signIn(signInDto.phone, signInDto.password);
     }
 
     @UseGuards(AuthGuard('jwt'))

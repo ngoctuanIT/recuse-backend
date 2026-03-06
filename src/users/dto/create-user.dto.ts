@@ -1,60 +1,40 @@
-import { IsNotEmpty, IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'; // 1. Import cái này
-
-// 2. Định nghĩa danh sách Role để Swagger hiện Dropdown chọn (đỡ phải gõ tay)
-export enum UserRole {
-    CITIZEN = 'CITIZEN',
-    RESCUE_TEAM = 'RESCUE_TEAM',
-    COORDINATOR = 'COORDINATOR',
-    MANAGER = 'MANAGER',
-    ADMIN = 'ADMIN',
-}
+import { IsNotEmpty, IsString, MinLength, Matches } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto {
-    // --- USERNAME ---
     @ApiProperty({
         example: 'nguyenvana',
         description: 'Tên đăng nhập (Duy nhất)',
     })
-    @IsNotEmpty()
+    @IsNotEmpty({ message: 'Tên đăng nhập không được để trống' })
     @IsString()
     username: string;
 
-    // --- PASSWORD ---
     @ApiProperty({
         example: '123456',
         description: 'Mật khẩu (Tối thiểu 6 ký tự)',
         minLength: 6
     })
-    @IsNotEmpty()
-    @MinLength(6, { message: 'Mật khẩu phải dài hơn 6 ký tự' })
+    @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
+    @MinLength(6, { message: 'Mật khẩu phải dài ít nhất 6 ký tự' })
     password: string;
 
-    // --- FULL NAME ---
     @ApiProperty({
         example: 'Nguyễn Văn A',
         description: 'Họ và tên đầy đủ'
     })
-    @IsNotEmpty()
+    @IsNotEmpty({ message: 'Họ và tên không được để trống' })
     @IsString()
     fullName: string;
 
-    // --- PHONE ---
     @ApiProperty({
         example: '0987654321',
-        description: 'Số điện thoại liên lạc'
+        description: 'Số điện thoại liên lạc (10 số, bắt đầu bằng số 0)'
     })
-    @IsNotEmpty()
-    @IsString()
+    @IsNotEmpty({ message: 'Số điện thoại không được để trống' })
+    // 👇 Nâng cấp Senior: Chặn user nhập SĐT bậy bạ
+    @Matches(/^(0[3|5|7|8|9])+([0-9]{8})$/, {
+        message: 'Số điện thoại không hợp lệ (Phải là số ĐT Việt Nam hợp lệ)'
+    })
     phone: string;
-
-    // --- ROLE (Quan trọng: Chọn từ danh sách) ---
-    @ApiPropertyOptional({
-        enum: UserRole, // Hiện Dropdown 
-        default: UserRole.CITIZEN, // Mặc định là dân thường
-        description: 'Vai trò người dùng (Mặc định là CITIZEN)'
-    })
-    @IsOptional()
-    @IsEnum(UserRole, { message: 'Role không hợp lệ (Phải là CITIZEN, ADMIN...)' })
-    role?: string;
 }

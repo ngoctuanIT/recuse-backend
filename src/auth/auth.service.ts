@@ -15,12 +15,13 @@ export class AuthService {
 
     // 1. ĐĂNG KÝ: Xử lý nghiệp vụ phức tạp trước khi lưu
     async signUp(createUserDto: CreateUserDto) {
-        const { username, password, ...rest } = createUserDto;
+        // 👇 Lấy phone ra để kiểm tra thay vì username
+        const { phone, password, ...rest } = createUserDto;
 
-        // Kiểm tra trùng username
-        const userExists = await this.usersService.findOne(username);
+        // 👇 Kiểm tra trùng Số điện thoại
+        const userExists = await this.usersService.findByPhone(phone);
         if (userExists) {
-            throw new BadRequestException('Tài khoản này đã tồn tại trên hệ thống!');
+            throw new BadRequestException('Số điện thoại này đã được đăng ký trên hệ thống!');
         }
 
         // Hash mật khẩu
@@ -33,7 +34,7 @@ export class AuthService {
 
         // Gọi kho dữ liệu (UsersService) để lưu
         const newUser = await this.usersService.create({
-            username,
+            phone,
             password: hashedPassword,
             userCode,
             ...rest,
@@ -42,27 +43,30 @@ export class AuthService {
         return {
             message: 'Đăng ký tài khoản thành công',
             userCode: newUser.userCode,
-            username: newUser.username,
+            phone: newUser.phone, // Trả về phone cho Frontend
         };
     }
 
     // 2. ĐĂNG NHẬP: Kiểm tra danh tính và cấp "vé" (JWT)
-    async signIn(username: string, pass: string) {
-        const user = await this.usersService.findOne(username);
+    // 👇 Đổi tham số username thành phone
+    async signIn(phone: string, pass: string) {
+        // 👇 Tìm user qua SĐT (Hàm findByPhone đã tự động chặn các user bị khóa)
+        const user = await this.usersService.findByPhone(phone);
 
         if (!user) {
-            throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
+            throw new UnauthorizedException('Số điện thoại hoặc mật khẩu không chính xác');
         }
 
         const isMatch = await bcrypt.compare(pass, user.password);
         if (!isMatch) {
-            throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
+            throw new UnauthorizedException('Số điện thoại hoặc mật khẩu không chính xác');
         }
 
         // Payload chứa thông tin cơ bản để các module khác dùng mà không cần query DB
         const payload = {
             sub: user._id,
-            username: user.username,
+            phone: user.phone,       // Cập nhật payload dùng phone
+            username: user.username, // Có thể giữ lại nếu hệ thống của bạn vẫn cần dùng
             role: user.role,
             userCode: user.userCode
         };
@@ -73,6 +77,7 @@ export class AuthService {
                 _id: user._id,
                 userCode: user.userCode,
                 fullName: user.fullName,
+                phone: user.phone,
                 role: user.role,
             },
         };

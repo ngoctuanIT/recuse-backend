@@ -4,11 +4,12 @@ import { CreateRescueRequestDto } from './dto/create-rescue-request.dto';
 import { QueryRescueRequestDto } from './dto/query-rescue-request.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { UpdateStatusDto } from './dto/update-status.dto';
-import { AssignTeamDto } from './dto/assign-team.dto';
+// 👇 1. Đã sửa tên Import chuẩn xác thành AssignRequestDto
+import { AssignRequestDto } from './dto/assign-request.dto';
 import { VerifyRequestDto } from './dto/verify-request.dto';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 
-// 👇 1. IMPORT CÁC FILE BẢO MẬT BẠN VỪA TẠO
+// IMPORT CÁC FILE BẢO MẬT
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Role } from '../auth/enums/role.enum';
@@ -101,9 +102,11 @@ export class RescueRequestsController {
   @ApiOperation({ summary: '[Coordinator] Điều phối: Gán đội cứu hộ cho yêu cầu này' })
   assignTeam(
     @Param('id') id: string,
-    @Body() assignTeamDto: AssignTeamDto
+    // 👇 2. Đổi ở đây thành AssignRequestDto
+    @Body() assignDto: AssignRequestDto
   ) {
-    return this.rescueRequestsService.assignTeam(id, assignTeamDto);
+    // 👇 3. Truyền assignDto xuống Service
+    return this.rescueRequestsService.assignTeam(id, assignDto);
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)

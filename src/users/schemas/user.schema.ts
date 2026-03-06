@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-// 👇 1. Import cái Enum bạn vừa tạo vào đây (Sửa lại đường dẫn cho đúng với project của bạn)
-import { Role } from '../../auth/enums/role.enum';
+import { Role } from '../../auth/enums/role.enum'; // Đảm bảo đường dẫn đúng
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -19,16 +18,20 @@ export class User {
     @Prop({ required: true })
     fullName: string;
 
-    @Prop({ required: true })
+    // 👇 1. SỬA: Thêm unique: true để đảm bảo SĐT không bị trùng
+    @Prop({ required: true, unique: true })
     phone: string;
 
-    // 👇 2. Đổi lại cách khai báo Enum
     @Prop({
         type: String,
-        enum: Object.values(Role), // Tự động lấy tất cả các giá trị trong file role.enum.ts
-        default: Role.CITIZEN      // Dùng luôn biến Role.CITIZEN cho an toàn, đỡ gõ sai chính tả
+        enum: Object.values(Role),
+        default: Role.CITIZEN
     })
     role: string;
+
+    // 👇 2. THÊM MỚI: Cờ đánh dấu Xóa mềm (Soft Delete)
+    @Prop({ default: true })
+    isActive: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
