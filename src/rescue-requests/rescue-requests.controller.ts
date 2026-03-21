@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request, UsePipes, ValidationPipe, Query, Patch, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, UsePipes, ValidationPipe, Query, Patch, Param, Req } from '@nestjs/common';
 import { RescueRequestsService } from './rescue-requests.service';
 import { CreateRescueRequestDto } from './dto/create-rescue-request.dto';
 import { QueryRescueRequestDto } from './dto/query-rescue-request.dto';
@@ -13,6 +13,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Role } from '../auth/enums/role.enum';
+import { CancelRescueRequestDto } from './dto/cancel-request.dto';
 
 @ApiTags('Rescue Requests')
 @ApiBearerAuth()
@@ -116,5 +117,18 @@ export class RescueRequestsController {
   confirmRescued(@Param('id') id: string, @Request() req) {
     const userId = req.user.sub || req.user.userId;
     return this.rescueRequestsService.confirmRescued(id, userId);
+  }
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.CITIZEN, Role.COORDINATOR, Role.ADMIN) // Cho phép 3 role này thực hiện
+  @Patch(':id/cancel')
+  @ApiOperation({ summary: '[Citizen/Coordinator] Hủy yêu cầu cứu hộ' })
+  cancel(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ whitelist: true })) cancelDto: CancelRescueRequestDto,
+    @Req() req: any // Lấy thông tin user từ JWT
+  ) {
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+    return this.rescueRequestsService.cancel(id, userId, userRole, cancelDto);
   }
 }

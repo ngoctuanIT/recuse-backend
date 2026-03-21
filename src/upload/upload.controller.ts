@@ -1,53 +1,51 @@
-import { Controller, Post, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import {
+  Controller, Post, UseInterceptors, UploadedFile,
+  ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, UseGuards
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { UploadService } from './upload.service';
+import { ApiTags, ApiConsumes, ApiBody, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
-@ApiTags('Upload')
+@ApiTags('Upload (Tải file kêu cứu)')
+@ApiBearerAuth()
 @Controller('upload')
 export class UploadController {
+  constructor(private readonly uploadService: UploadService) { }
 
+  @UseGuards(AuthGuard('jwt')) // Yêu cầu đăng nhập mới được up ảnh
   @Post('image')
-  @ApiOperation({ summary: 'Upload file ảnh (jpg, png, gif)' }) // ✨ 1. Thêm mô tả cho dễ hiểu
-  @ApiConsumes('multipart/form-data') // ✨ 2. Báo cho Swagger biết đây là form upload
+  @UseInterceptors(FileInterceptor('file')) // 👈 Moi file có key là 'file'
+  @ApiOperation({ summary: 'Upload 1 ảnh kêu cứu lên hệ thống (Firebase)' })
+  @ApiConsumes('multipart/form-data') // Khai báo cho Swagger
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        file: { // ⚠️ Tên này phải trùng với chữ 'file' bên dưới
+        file: {
           type: 'string',
-          format: 'binary', // ✨ 3. Biến ô nhập thành nút "Choose File"
+          format: 'binary',
+          description: 'Chọn file ảnh (.png, .jpg, .webp)'
         },
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file', {
-    // 1. Cấu hình nơi lưu và tên file
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `${uniqueSuffix}${ext}`);
-      },
-    }),
-    // 2. Validate loại file (Chỉ cho phép ảnh)
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-        return callback(new BadRequestException('Chỉ chấp nhận file ảnh!'), false);
-      }
-      callback(null, true);
-    },
-  }))
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('Vui lòng chọn file!');
-    }
-
-    // Trả về đường dẫn file
-    return {
-      url: `/uploads/${file.filename}`
-    };
+  async uploadImage(
+    @UploadedFile(
+      // 🛡️ MÀNG LỌC CHỐT CHẶN CỬA NGÕ (NESTJS PIPE)
+      new ParseFilePipe({
+        validators: [
+          // Chốt 1: Chỉ cho phép ảnh (.png, .jpg, .jpeg, .webp)
+          new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp)' }),
+          // Chốt 2: Dung lượng tối đa 5MB
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }),
+        ],
+        errorHttpStatusCode: 400, // Lỗi báo 400 rõ ràng
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    // Pass qua màng lọc mới cho gọi Service để bắn lên Firebase
+    return this.uploadService.uploadImage(file);
   }
 }

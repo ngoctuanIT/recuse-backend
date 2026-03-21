@@ -1,12 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsNumber, NotEquals } from 'class-validator';
 
 export class UpdateStockDto {
-    @ApiProperty({
-        example: 50,
-        description: 'Số lượng thay đổi (Số dương để nhập thêm, Số âm để xuất kho)'
+    @ApiProperty({ 
+        example: -50, 
+        description: 'Số lượng thay đổi: Dương (+) là Nhập kho, Âm (-) là Xuất kho' 
     })
     @IsNotEmpty()
     @IsNumber()
-    amount: number; // Ví dụ: 50 (Nhập 50 thùng), -20 (Xuất 20 thùng)
+    @NotEquals(0, { message: 'Số lượng thay đổi không được bằng 0' })
+    quantityChange: number;
 }

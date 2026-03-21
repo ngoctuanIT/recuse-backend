@@ -22,7 +22,8 @@ export class RescueTeam {
 
     @Prop({ default: 'AVAILABLE', enum: ['AVAILABLE', 'BUSY', 'OFFLINE'] })
     status: string;
-
+    @Prop({ default: true })
+    isActive: boolean;
     @Prop(raw({
         type: {
             type: String,

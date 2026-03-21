@@ -14,6 +14,7 @@ import { CountersService } from '../counters/schemas/counter.service';
 import { RescueTeam } from '../rescue-teams/schemas/rescue-team.schema';
 import { Vehicle } from '../vehicles/schemas/vehicle.schema';
 import { Inventory } from '../inventories/schemas/inventory.schema';
+import { CancelRescueRequestDto } from './dto/cancel-request.dto';
 
 @Injectable()
 export class RescueRequestsService {
@@ -211,4 +212,41 @@ export class RescueRequestsService {
       .populate('userId', 'fullName phone location description images')
       .exec();
   }
+  // Thêm hàm này vào RescueRequestsService
+async cancel(id: string, userId: string, userRole: string, cancelDto: CancelRescueRequestDto) {
+  if (!Types.ObjectId.isValid(id)) throw new BadRequestException('ID không hợp lệ');
+
+  // 1. Build bộ lọc an toàn
+  const filter: any = { 
+    _id: id,
+    status: 'PENDING' // Chặn cứng: Chỉ cho phép hủy khi đang PENDING
+  };
+
+  // Nếu là Citizen, ép buộc phải đúng chủ nhân mới được hủy
+  if (userRole === 'CITIZEN') {
+    filter.citizenId = userId; 
+  }
+
+  // 2. Thực thi Atomic Update
+  const canceledRequest = await this.rescueRequestModel.findOneAndUpdate(
+    filter,
+    { 
+      $set: { 
+        status: 'CANCELED',
+        cancelReason: cancelDto.cancelReason,
+        canceledAt: new Date() // Ghi nhận thời gian hủy
+      } 
+    },
+    { new: true }
+  );
+
+  // 3. Bắt lỗi logic
+  if (!canceledRequest) {
+    throw new BadRequestException(
+      'Không thể hủy yêu cầu! Yêu cầu không tồn tại, bạn không có quyền, hoặc Đội cứu hộ đã xuất phát.'
+    );
+  }
+
+  return { message: 'Đã hủy yêu cầu cứu hộ thành công', data: canceledRequest };
+}
 }

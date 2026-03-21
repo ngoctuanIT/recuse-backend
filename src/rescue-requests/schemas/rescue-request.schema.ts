@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
-import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
+import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
 import { User } from '../../users/schemas/user.schema';
-// Import chính xác class RescueTeam từ module của bạn
 import { RescueTeam } from '../../rescue-teams/schemas/rescue-team.schema';
 
 export type RescueRequestDocument = HydratedDocument<RescueRequest>;
@@ -11,8 +10,9 @@ export class RescueRequest {
     @Prop({ unique: true, sparse: true })
     requestCode: string;
 
+    // 1. SỬA TÊN BIẾN VÀ TYPE: Gọi là 'user' nếu muốn populate, hoặc giữ type ObjectId
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
-    userId: User;
+    userId: Types.ObjectId;
 
     @Prop({ required: true })
     description: string;
@@ -20,29 +20,31 @@ export class RescueRequest {
     @Prop([String])
     images: string[];
 
-    // Đã bổ sung trạng thái 'VERIFIED' cho Điều phối viên
+    // 2. BỔ SUNG ĐỦ TRẠNG THÁI
     @Prop({
         default: 'PENDING',
-        enum: ['PENDING', 'VERIFIED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']
+        enum: ['PENDING', 'VERIFIED', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'RESOLVED', 'CANCELLED']
     })
     status: string;
 
-    // Đã liên kết chuẩn xác với bảng RescueTeam
+    // Sửa type lại cho đồng bộ chuẩn ObjectId
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'RescueTeam', default: null })
-    assignedTeamId: RescueTeam;
+    assignedTeamId: Types.ObjectId;
 
     @Prop({ default: 'LOW', enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] })
     urgencyLevel: string;
 
-    // Cấu trúc GeoJSON chuẩn (Đã xóa index dư thừa bên trong)
+    // 3. KHÓA CHẶT TỌA ĐỘ (Bắt buộc phải có)
     @Prop(raw({
         type: {
             type: String,
             enum: ['Point'],
-            default: 'Point'
+            default: 'Point',
+            required: true // Bắt buộc
         },
         coordinates: {
             type: [Number], // [Kinh độ, Vĩ độ]
+            required: true  // Bắt buộc
         }
     }))
     location: {
@@ -53,5 +55,5 @@ export class RescueRequest {
 
 export const RescueRequestSchema = SchemaFactory.createForClass(RescueRequest);
 
-// Đánh index 2dsphere ở ngoài cùng là chuẩn và tối ưu nhất của Mongoose
+// Index hoàn hảo cho việc tìm kiếm bán kính
 RescueRequestSchema.index({ location: '2dsphere' });

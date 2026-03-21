@@ -1,5 +1,6 @@
 import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { CreateRescueTeamDto, TeamStatus } from './create-rescue-team.dto';
+import { CreateRescueTeamDto } from './create-rescue-team.dto';
+import { TeamStatus } from '../enums/team-status.enum';
 import { IsEnum, IsOptional } from 'class-validator';
 
 // Kế thừa toàn bộ thuộc tính từ Create nhưng biến chúng thành Optional (không bắt buộc)
