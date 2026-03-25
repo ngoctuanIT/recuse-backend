@@ -34,12 +34,20 @@ export class RescueTeamsService {
     const existingTeam = await this.rescueTeamModel.findOne({ teamName: createDto.teamName });
     if (existingTeam) throw new ConflictException('Tên đội này đã tồn tại!');
 
+    // 🛡️ Bóc tách tọa độ ra khỏi DTO
+    const { latitude, longitude, ...restDto } = createDto;
+
     const newTeam = new this.rescueTeamModel({
-      ...createDto,
+      ...restDto, // Chỉ nạp các trường còn lại (teamName, leaderId,...)
       members: [createDto.leaderId],
       vehicles: [],
       status: TeamStatus.AVAILABLE,
-      isActive: true // Khởi tạo cờ xóa mềm
+      isActive: true, // Khởi tạo cờ xóa mềm
+      // 👇 Nạp tọa độ vào chuẩn GeoJSON của Mongoose
+      currentLocation: {
+        type: 'Point',
+        coordinates: [longitude, latitude] // Lưu ý: MongoDB yêu cầu [Kinh độ, Vĩ độ]
+      }
     });
 
     return await newTeam.save();

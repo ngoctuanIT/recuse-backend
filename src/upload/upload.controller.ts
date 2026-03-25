@@ -16,7 +16,7 @@ export class UploadController {
   @UseGuards(AuthGuard('jwt')) // Yêu cầu đăng nhập mới được up ảnh
   @Post('image')
   @UseInterceptors(FileInterceptor('file')) // 👈 Moi file có key là 'file'
-  @ApiOperation({ summary: 'Upload 1 ảnh kêu cứu lên hệ thống (Firebase)' })
+  @ApiOperation({ summary: 'Upload 1 ảnh kêu cứu lên hệ thống (Cloudinary)' })
   @ApiConsumes('multipart/form-data') // Khai báo cho Swagger
   @ApiBody({
     schema: {
@@ -45,7 +45,7 @@ export class UploadController {
     )
     file: Express.Multer.File,
   ) {
-    // Pass qua màng lọc mới cho gọi Service để bắn lên Firebase
+    // Pass qua màng lọc mới cho gọi Service để bắn lên Cloudinary
     return this.uploadService.uploadImage(file);
   }
 }

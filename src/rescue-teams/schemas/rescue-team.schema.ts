@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
 import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
 import { User } from '../../users/schemas/user.schema';
-import { Vehicle } from '../../vehicles/schemas/vehicle.schema'; // 👈 Import bảng Vehicle vào
+import { Vehicle } from '../../vehicles/schemas/vehicle.schema';
 
 export type RescueTeamDocument = HydratedDocument<RescueTeam>;
 
@@ -16,14 +16,16 @@ export class RescueTeam {
     @Prop([{ type: MongooseSchema.Types.ObjectId, ref: 'User' }])
     members: User[];
 
-    // 👇 ĐÃ SỬA: Một đội có thể được cấp 1 hoặc nhiều phương tiện đi kèm
     @Prop([{ type: MongooseSchema.Types.ObjectId, ref: 'Vehicle' }])
     vehicles: Vehicle[];
 
     @Prop({ default: 'AVAILABLE', enum: ['AVAILABLE', 'BUSY', 'OFFLINE'] })
     status: string;
+
     @Prop({ default: true })
     isActive: boolean;
+
+    // 🛡️ Đã cập nhật chuẩn GeoJSON, bắt buộc có tọa độ, không dùng default
     @Prop(raw({
         type: {
             type: String,
@@ -32,14 +34,15 @@ export class RescueTeam {
         },
         coordinates: {
             type: [Number],
-            default: [105.854444, 21.028511],
+            required: true, // Ép buộc phải lưu tọa độ thật
         }
     }))
     currentLocation: {
         type: string;
-        coordinates: number[];
+        coordinates: number[]; // [Kinh độ, Vĩ độ]
     };
 }
 
 export const RescueTeamSchema = SchemaFactory.createForClass(RescueTeam);
+// Index dùng cho query tọa độ địa lý (Tìm kiếm bán kính)
 RescueTeamSchema.index({ currentLocation: '2dsphere' });
