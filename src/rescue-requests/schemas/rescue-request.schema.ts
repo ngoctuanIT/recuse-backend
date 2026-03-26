@@ -10,41 +10,51 @@ export class RescueRequest {
     @Prop({ unique: true, sparse: true })
     requestCode: string;
 
-    // 1. SỬA TÊN BIẾN VÀ TYPE: Gọi là 'user' nếu muốn populate, hoặc giữ type ObjectId
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
     userId: Types.ObjectId;
 
     @Prop({ required: true })
     description: string;
 
+    // Ảnh người dân chụp lúc báo nạn
     @Prop([String])
     images: string[];
 
-    // 2. BỔ SUNG ĐỦ TRẠNG THÁI
     @Prop({
         default: 'PENDING',
         enum: ['PENDING', 'VERIFIED', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'RESOLVED', 'CANCELLED']
     })
     status: string;
 
-    // Sửa type lại cho đồng bộ chuẩn ObjectId
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'RescueTeam', default: null })
     assignedTeamId: Types.ObjectId;
 
     @Prop({ default: 'LOW', enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] })
     urgencyLevel: string;
 
-    // 3. KHÓA CHẶT TỌA ĐỘ (Bắt buộc phải có)
+    // 👇 1. BỔ SUNG: Ảnh chứng thực do Đội cứu hộ chụp khi báo cáo COMPLETED
+    @Prop()
+    evidenceImage: string;
+
+    // 👇 2. BỔ SUNG: Lý do hủy ca cứu hộ (Bắt buộc điền nếu status là CANCELLED)
+    @Prop()
+    cancelReason: string;
+
+    // 👇 3. BỔ SUNG: Dấu mốc thời gian hoàn thành nhiệm vụ (Phục vụ đo lường KPI/Thống kê)
+    @Prop({ type: Date })
+    completedAt: Date;
+
+    // KHÓA CHẶT TỌA ĐỘ
     @Prop(raw({
         type: {
             type: String,
             enum: ['Point'],
             default: 'Point',
-            required: true // Bắt buộc
+            required: true
         },
         coordinates: {
             type: [Number], // [Kinh độ, Vĩ độ]
-            required: true  // Bắt buộc
+            required: true
         }
     }))
     location: {
@@ -57,3 +67,5 @@ export const RescueRequestSchema = SchemaFactory.createForClass(RescueRequest);
 
 // Index hoàn hảo cho việc tìm kiếm bán kính
 RescueRequestSchema.index({ location: '2dsphere' });
+// Index phụ: Giúp Admin lọc nhanh các ca theo trạng thái và thời gian
+RescueRequestSchema.index({ status: 1, createdAt: -1 });

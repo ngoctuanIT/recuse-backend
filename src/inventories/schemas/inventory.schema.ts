@@ -26,20 +26,27 @@ export class Inventory {
     })
     category: string;
 
-    // 🛡️ BỔ SUNG: Ngưỡng cảnh báo hết hàng (Mặc định 10)
+    // Ngưỡng cảnh báo hết hàng (Mặc định 10)
     @Prop({ required: true, min: 0, default: 10 })
     lowStockThreshold: number;
 
-    // Ghi chú thêm (VD: Hạn sử dụng tháng 12/2026)
+    // 👇 ĐÃ SỬA: Trả lại đúng bản chất của ghi chú (VD: Bảo quản nơi khô ráo, thùng móp nhẹ do vận chuyển)
     @Prop()
     description: string;
 
-    // 🛡️ BỔ SUNG: Xóa mềm (Cho phép ẩn vật phẩm thay vì xóa vĩnh viễn)
+    // 👇 THÊM TRƯỜNG HẠN SỬ DỤNG: Dùng kiểu Date chuẩn của MongoDB
+    @Prop({ type: Date, required: false })
+    expirationDate: Date;
+
+    // Xóa mềm (Cho phép ẩn vật phẩm thay vì xóa vĩnh viễn)
     @Prop({ default: true })
     isActive: boolean;
 }
 
 export const InventorySchema = SchemaFactory.createForClass(Inventory);
 
-// 🛡️ BỔ SUNG INDEX: Đánh index để tăng tốc độ tìm kiếm khi lọc hàng sắp hết
+// 🛡️ INDEX CŨ: Tăng tốc độ tìm kiếm khi lọc hàng sắp hết số lượng (Low Stock)
 InventorySchema.index({ isActive: 1, quantity: 1, lowStockThreshold: 1 });
+
+// 🚀 INDEX MỚI (Tư duy Senior): Đánh index nòng cốt cho nghiệp vụ cảnh báo Hết Hạn Sử Dụng (FEFO)
+InventorySchema.index({ isActive: 1, expirationDate: 1 });
