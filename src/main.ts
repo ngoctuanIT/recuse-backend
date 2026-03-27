@@ -19,7 +19,8 @@ async function bootstrap() {
 
   // 2. Validation chung cho toàn hệ thống
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, // Tự động loại bỏ các field rác không có trong DTO
+    whitelist: true,
+    transform: true,
   }));
 
   // 3. CẤU HÌNH SWAGGER

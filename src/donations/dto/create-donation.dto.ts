@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateDonationDto {
     @ApiProperty({ example: 50000, description: 'Số tiền quyên góp (Tối thiểu 10.000đ)' })
@@ -9,6 +9,7 @@ export class CreateDonationDto {
     amount: number;
 
     @ApiPropertyOptional({ example: 'Ung ho dong bao vung lu', description: 'Lời nhắn quyên góp' })
+    @IsOptional()
     @IsString()
     message?: string;
 }

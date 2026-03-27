@@ -1,24 +1,29 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { DonationStatus } from '../enums/donation-status.enum';
 
 export type DonationDocument = HydratedDocument<Donation>;
 
 @Schema({ timestamps: true })
 export class Donation {
-    @Prop({ required: true, unique: true })
-    orderId: string; // Mã giao dịch tự gen (VD: DONATE_20260327153000)
+    @Prop({ required: true, unique: true, index: true })
+    orderId: string;
 
     @Prop({ required: true, min: 10000 })
-    amount: number; // Số tiền (VNĐ)
+    amount: number;
 
-    @Prop()
-    message: string; // Lời nhắn
+    @Prop({ default: '' })
+    message: string;
 
-    @Prop({ default: 'PENDING', enum: ['PENDING', 'SUCCESS', 'FAILED'] })
-    status: string;
+    @Prop({
+        default: DonationStatus.PENDING,
+        enum: DonationStatus,
+        index: true,
+    })
+    status: DonationStatus;
 
-    @Prop()
-    vnp_TransactionNo: string; // Mã giao dịch thật của VNPay (Lưu lại để đối soát sau này)
+    @Prop({ type: String, default: null })
+    vnp_TransactionNo: string | null;
 }
 
 export const DonationSchema = SchemaFactory.createForClass(Donation);
