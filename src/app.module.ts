@@ -14,6 +14,7 @@ import { UploadModule } from './upload/upload.module';
 import { CountersModule } from './counters/schemas/counter.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
 import { InventoriesModule } from './inventories/inventories.module';
+import { DonationsModule } from './donations/donations.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { InventoriesModule } from './inventories/inventories.module';
     InventoriesModule,
     CountersModule,
     VehiclesModule,
+    DonationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
