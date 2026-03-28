@@ -9,7 +9,6 @@ import { Donation, DonationDocument } from './schemas/donation.schema';
 import { DonationStatus } from './enums/donation-status.enum';
 import { GetDonationsDto } from './dto/get-donations.dto';
 
-
 @Injectable()
 export class DonationsService {
     private readonly logger = new Logger(DonationsService.name);
@@ -23,28 +22,24 @@ export class DonationsService {
     // PRIVATE HELPERS
     // =========================================================================
 
-    /** Đọc config từ .env, tự trim và loại bỏ dấu nháy thừa */
     private getConfig(key: string): string {
         const value = this.configService.get<string>(key);
         if (!value) throw new Error(`Missing env: ${key}`);
         return value.replace(/['"]/g, '').trim();
     }
 
-    /** Sort object theo chuẩn VNPay */
     private sortObject(obj: Record<string, any>): Record<string, string> {
         const sorted: Record<string, string> = {};
         const keys = Object.keys(obj).map(encodeURIComponent).sort();
 
         for (const key of keys) {
             const val = obj[decodeURIComponent(key)];
-            // FIX: Dùng optional chaining và fallback về chuỗi rỗng để không bị lỗi undefined
             sorted[key] = encodeURIComponent(val?.toString() || '').replace(/%20/g, '+');
         }
 
         return sorted;
     }
 
-    /** Tạo HMAC SHA512 signature */
     private createSignature(params: Record<string, any>): string {
         const secretKey = this.getConfig('VNP_HASH_SECRET');
         const sorted = this.sortObject(params);
@@ -55,14 +50,9 @@ export class DonationsService {
             .digest('hex');
     }
 
-    /** Verify chữ ký từ VNPay callback */
-    private verifySignature(query: Record<string, any>): {
-        isValid: boolean;
-        params: Record<string, any>;
-    } {
+    private verifySignature(query: Record<string, any>): { isValid: boolean; params: Record<string, any> } {
         const params: Record<string, string> = {};
 
-        // FIX: Chỉ lấy các param do VNPAY trả về (bắt đầu bằng vnp_), loại bỏ param rác của framework
         for (const key in query) {
             if (key.startsWith('vnp_')) {
                 params[key] = query[key];
@@ -75,14 +65,11 @@ export class DonationsService {
         delete params['vnp_SecureHashType'];
 
         const signed = this.createSignature(params);
-
-        // FIX: So sánh an toàn đưa hết về chữ thường đề phòng case-sensitive
         const isValid = !!secureHash && secureHash.toString().toLowerCase() === signed.toLowerCase();
 
         return { isValid, params };
     }
 
-    /** Tạo orderId unique: DONATE_YYMMDDHHmmss_XXXX */
     private generateOrderId(): string {
         const now = new Date();
         const pad = (n: number) => n.toString().padStart(2, '0');
@@ -94,15 +81,13 @@ export class DonationsService {
         const mm = pad(now.getMinutes());
         const ss = pad(now.getSeconds());
 
-        const rand = crypto.randomBytes(2).toString('hex').toUpperCase(); // 4 ký tự hex
+        const rand = crypto.randomBytes(2).toString('hex').toUpperCase();
 
         return `DONATE_${yy}${MM}${dd}${HH}${mm}${ss}_${rand}`;
     }
 
-    /** Format ngày theo chuẩn VNPay: YYYYMMDDHHmmss (UTC+7) */
     private getVnpayDate(): string {
         const now = new Date();
-        // UTC+7
         const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
         const y = vnTime.getUTCFullYear();
         const M = (vnTime.getUTCMonth() + 1).toString().padStart(2, '0');
@@ -114,9 +99,9 @@ export class DonationsService {
     }
 
     // =========================================================================
-    // 1. TẠO LINK THANH TOÁN
+    // 1. TẠO LINK THANH TOÁN (Cập nhật thêm userId)
     // =========================================================================
-    async createVNPayUrl(ipAddr: string, amount: number, message?: string) {
+    async createVNPayUrl(userId: string, ipAddr: string, amount: number, message?: string) {
         const tmnCode = this.getConfig('VNP_TMN_CODE');
         const vnpUrl = this.getConfig('VNP_URL');
         const returnUrl = this.getConfig('VNP_RETURN_URL');
@@ -125,7 +110,9 @@ export class DonationsService {
         const createDate = this.getVnpayDate();
         const orderInfo = message || 'Quyen gop cuu ho';
 
+        // THÊM userId VÀO LÚC TẠO ĐƠN HÀNG
         await this.donationModel.create({
+            userId,
             orderId,
             amount,
             message: orderInfo,
@@ -153,7 +140,7 @@ export class DonationsService {
 
         const paymentUrl = vnpUrl + '?' + qs.stringify(sortedParams, { encode: false });
 
-        this.logger.log(`Created payment: ${orderId} | ${amount}đ`);
+        this.logger.log(`Created payment: ${orderId} | User: ${userId} | ${amount}đ`);
         return { paymentUrl, orderId };
     }
 
@@ -225,7 +212,7 @@ export class DonationsService {
     }
 
     // =========================================================================
-    // 4. LẤY DANH SÁCH DONATIONS (pagination + filter)
+    // 4. LẤY DANH SÁCH DONATIONS (Cho Admin)
     // =========================================================================
     async findAll(dto: GetDonationsDto) {
         const { page = 1, limit = 10, status } = dto;
@@ -247,17 +234,12 @@ export class DonationsService {
 
         return {
             data,
-            meta: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-            },
+            meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
         };
     }
 
     // =========================================================================
-    // 5. LẤY CHI TIẾT 1 DONATION THEO ORDER ID
+    // 5. LẤY CHI TIẾT 1 DONATION
     // =========================================================================
     async findOne(orderId: string) {
         const donation = await this.donationModel
@@ -270,5 +252,33 @@ export class DonationsService {
         }
 
         return donation;
+    }
+
+    // =========================================================================
+    // 6. THÊM MỚI: LẤY LỊCH SỬ CỦA TỪNG NGƯỜI DÙNG
+    // =========================================================================
+    async findHistoryByUser(userId: string, dto: GetDonationsDto) {
+        const { page = 1, limit = 10, status } = dto;
+        const skip = (page - 1) * limit;
+
+        // Bắt buộc lọc theo userId
+        const filter: Record<string, any> = { userId };
+        if (status) filter.status = status;
+
+        const [data, total] = await Promise.all([
+            this.donationModel
+                .find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .select('-__v')
+                .lean(),
+            this.donationModel.countDocuments(filter),
+        ]);
+
+        return {
+            data,
+            meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+        };
     }
 }

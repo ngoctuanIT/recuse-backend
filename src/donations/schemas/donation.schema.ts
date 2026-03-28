@@ -6,6 +6,10 @@ export type DonationDocument = HydratedDocument<Donation>;
 
 @Schema({ timestamps: true })
 export class Donation {
+    // THÊM MỚI: Liên kết đơn hàng với người dùng
+    @Prop({ required: true, index: true })
+    userId: string;
+
     @Prop({ required: true, unique: true, index: true })
     orderId: string;
 

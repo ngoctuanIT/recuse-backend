@@ -1,34 +1,42 @@
 import {
     Controller, Post, Get,
     Body, Req, Query, Res,
-    Param, HttpStatus,
+    Param, HttpStatus, UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
+import { AuthGuard } from '@nestjs/passport'; // Sử dụng đúng Passport JWT
+
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
 
 import { DonationsService } from './donations.service';
 import { CreateDonationDto } from './dto/create-donation.dto';
 import { GetDonationsDto } from './dto/get-donations.dto';
 
-
-@ApiTags('Donations')
+@ApiTags('Donations (Quản lý Quyên góp)')
 @Controller('donations')
 export class DonationsController {
-    constructor(private readonly donationsService: DonationsService) {}
+    constructor(private readonly donationsService: DonationsService) { }
 
     // =========================================================================
-    // 1. TẠO LINK THANH TOÁN
+    // 1. TẠO LINK THANH TOÁN (Chỉ Citizen/User mới quyên góp)
     // =========================================================================
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt')) // Chỉ cần check đăng nhập là được quyên góp
     @Post('vnpay-create')
-    @ApiOperation({ summary: 'Tạo link thanh toán VNPAY' })
-    @ApiResponse({ status: 201, description: 'Trả về paymentUrl và orderId' })
-    async createPayment(@Body() body: CreateDonationDto, @Req() req: Request) {
+    @ApiOperation({ summary: 'Tạo link thanh toán VNPAY (Yêu cầu đăng nhập)' })
+    async createPayment(@Body() body: CreateDonationDto, @Req() req: any) {
         let ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-
         if (Array.isArray(ipAddr)) ipAddr = ipAddr[0];
         if (ipAddr === '::1' || ipAddr === '::ffff:127.0.0.1') ipAddr = '127.0.0.1';
 
+        // Lấy userId từ req.user (do Passport JWT gắn vào sau khi validate thành công)
+        const userId = req.user?._id || req.user?.id;
+
         return this.donationsService.createVNPayUrl(
+            userId,
             ipAddr as string,
             body.amount,
             body.message,
@@ -36,10 +44,22 @@ export class DonationsController {
     }
 
     // =========================================================================
-    // 2. VNPAY RETURN URL
+    // 2. LẤY LỊCH SỬ QUYÊN GÓP CỦA TÔI
+    // =========================================================================
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'))
+    @Get('my-history')
+    @ApiOperation({ summary: 'Xem lịch sử quyên góp cá nhân' })
+    async getMyHistory(@Req() req: any, @Query() query: GetDonationsDto) {
+        const userId = req.user?._id || req.user?.id;
+        return this.donationsService.findHistoryByUser(userId, query);
+    }
+
+    // =========================================================================
+    // 3. VNPAY RETURN URL (Public - FE gọi để hiển thị kết quả)
     // =========================================================================
     @Get('vnpay-return')
-    @ApiOperation({ summary: 'VNPAY redirect về sau thanh toán' })
+    @ApiOperation({ summary: 'Hứng kết quả redirect từ VNPAY' })
     vnpayReturn(@Query() query: any, @Res() res: Response) {
         const result = this.donationsService.verifyReturnUrl(query);
 
@@ -57,35 +77,34 @@ export class DonationsController {
     }
 
     // =========================================================================
-    // 3. VNPAY IPN WEBHOOK
+    // 4. VNPAY IPN WEBHOOK (Public - Server VNPAY gọi ngầm)
     // =========================================================================
     @Get('vnpay-ipn')
-    @ApiOperation({ summary: 'VNPAY gọi ngầm để xác nhận giao dịch' })
+    @ApiOperation({ summary: 'Webhook xác nhận giao dịch từ VNPAY' })
     async vnpayIpn(@Query() query: any) {
         return this.donationsService.processIpn(query);
     }
 
     // =========================================================================
-    // 4. LẤY DANH SÁCH DONATIONS
+    // 5. LẤY DANH SÁCH (Dành cho Admin/Manager quản lý dòng tiền)
     // =========================================================================
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Roles(Role.MANAGER, Role.ADMIN)
     @Get()
-    @ApiOperation({ summary: 'Lấy danh sách donations (pagination + filter)' })
-    @ApiResponse({
-        status: 200,
-        description: 'Trả về danh sách donations và metadata phân trang',
-    })
+    @ApiOperation({ summary: '[Manager/Admin] Xem toàn bộ danh sách quyên góp' })
     async findAll(@Query() query: GetDonationsDto) {
         return this.donationsService.findAll(query);
     }
 
     // =========================================================================
-    // 5. LẤY CHI TIẾT 1 DONATION
+    // 6. XEM CHI TIẾT 1 ĐƠN HÀNG
     // =========================================================================
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Roles(Role.MANAGER, Role.ADMIN, Role.COORDINATOR)
     @Get(':orderId')
-    @ApiOperation({ summary: 'Lấy chi tiết 1 donation theo orderId' })
-    @ApiParam({ name: 'orderId', example: 'DONATE_260327200000_A3B1', description: 'Mã đơn hàng' })
-    @ApiResponse({ status: 200, description: 'Trả về thông tin donation' })
-    @ApiResponse({ status: 404, description: 'Không tìm thấy donation' })
+    @ApiOperation({ summary: 'Xem chi tiết 1 đơn quyên góp' })
     async findOne(@Param('orderId') orderId: string) {
         return this.donationsService.findOne(orderId);
     }
