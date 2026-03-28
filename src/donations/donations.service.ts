@@ -17,7 +17,7 @@ export class DonationsService {
     constructor(
         private configService: ConfigService,
         @InjectModel(Donation.name) private donationModel: Model<DonationDocument>,
-    ) {}
+    ) { }
 
     // =========================================================================
     // PRIVATE HELPERS
@@ -36,9 +36,9 @@ export class DonationsService {
         const keys = Object.keys(obj).map(encodeURIComponent).sort();
 
         for (const key of keys) {
-            sorted[key] = encodeURIComponent(
-                obj[decodeURIComponent(key)].toString(),
-            ).replace(/%20/g, '+');
+            const val = obj[decodeURIComponent(key)];
+            // FIX: Dùng optional chaining và fallback về chuỗi rỗng để không bị lỗi undefined
+            sorted[key] = encodeURIComponent(val?.toString() || '').replace(/%20/g, '+');
         }
 
         return sorted;
@@ -60,14 +60,26 @@ export class DonationsService {
         isValid: boolean;
         params: Record<string, any>;
     } {
-        const params = { ...query };
+        const params: Record<string, string> = {};
+
+        // FIX: Chỉ lấy các param do VNPAY trả về (bắt đầu bằng vnp_), loại bỏ param rác của framework
+        for (const key in query) {
+            if (key.startsWith('vnp_')) {
+                params[key] = query[key];
+            }
+        }
+
         const secureHash = params['vnp_SecureHash'];
 
         delete params['vnp_SecureHash'];
         delete params['vnp_SecureHashType'];
 
         const signed = this.createSignature(params);
-        return { isValid: secureHash === signed, params };
+
+        // FIX: So sánh an toàn đưa hết về chữ thường đề phòng case-sensitive
+        const isValid = !!secureHash && secureHash.toString().toLowerCase() === signed.toLowerCase();
+
+        return { isValid, params };
     }
 
     /** Tạo orderId unique: DONATE_YYMMDDHHmmss_XXXX */
