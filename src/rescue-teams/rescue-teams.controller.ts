@@ -130,10 +130,10 @@ export class RescueTeamsController {
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.RESCUE_TEAM, Role.COORDINATOR, Role.ADMIN)
+  @Roles(Role.RESCUE_TEAM, Role.COORDINATOR, Role.ADMIN, Role.MANAGER)
   @Patch(':id/status')
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  @ApiOperation({ summary: '[Team/Coordinator] Cập nhật trạng thái Đội (AVAILABLE / OFFLINE)' })
+  @ApiOperation({ summary: '[Team/Coordinator/Admin] Cập nhật trạng thái Đội (AVAILABLE / OFFLINE)' })
   updateStatus(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateTeamStatusDto,
