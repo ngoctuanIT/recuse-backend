@@ -32,8 +32,8 @@ export class DonationsController {
         if (Array.isArray(ipAddr)) ipAddr = ipAddr[0];
         if (ipAddr === '::1' || ipAddr === '::ffff:127.0.0.1') ipAddr = '127.0.0.1';
 
-        // Lấy userId từ req.user (do Passport JWT gắn vào sau khi validate thành công)
-        const userId = req.user?._id || req.user?.id;
+        // ĐÃ FIX: Lấy userId từ req.user.sub (Khớp với cấu hình trả về trong JwtStrategy)
+        const userId = req.user?.sub;
 
         return this.donationsService.createVNPayUrl(
             userId,
@@ -51,7 +51,10 @@ export class DonationsController {
     @Get('my-history')
     @ApiOperation({ summary: 'Xem lịch sử quyên góp cá nhân' })
     async getMyHistory(@Req() req: any, @Query() query: GetDonationsDto) {
-        const userId = req.user?._id || req.user?.id;
+
+        // ĐÃ FIX: Lấy userId từ req.user.sub
+        const userId = req.user?.sub;
+
         return this.donationsService.findHistoryByUser(userId, query);
     }
 
