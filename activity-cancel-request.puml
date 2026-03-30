@@ -1,0 +1,34 @@
+@startuml Activity_Cancel_Request
+title Quy trinh Huy Yeu Cau Cuu Ho (cancel)
+
+start
+
+:Nhan request huy\n(id, cancelReason, role, userId);
+
+:Kiem tra dinh dang ID hop le?;
+if (ID khong hop le?) then (Co)
+  :Tra ve loi 400\n"ID khong hop le";
+  stop
+else (OK)
+endif
+
+:Xay dung filter:\n{ _id: id, status: 'PENDING' };
+
+if (Role la CITIZEN?) then (Co)
+  :Them dieu kien:\nfilter.userId = userId\n(Chi chu nhan moi huy duoc);
+else (Khong)
+endif
+
+:Thuc hien Atomic Update findOneAndUpdate();
+
+if (Khong tim thay?) then (Co)
+  :Tra ve loi 400\n"Khong the huy: Khong ton tai,\nkhong co quyen, hoac doi da xuat phat";
+  stop
+else (Tim thay)
+endif
+
+:Cap nhat:\n{ status: CANCELLED, cancelReason };
+:Tra ve ket qua thanh cong;
+
+stop
+@enduml

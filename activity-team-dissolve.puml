@@ -1,0 +1,46 @@
+@startuml Activity_Team_Dissolve
+title Quy trinh Giai Tan Doi Cuu Ho (remove - Soft Delete + Cascading)
+
+start
+
+:Nhan request giai tan doi (teamId);
+:Kiem tra ID hop le?;
+if (ID sai?) then (Co)
+  :Tra ve loi 400;
+  stop
+else (OK)
+endif
+
+:Bat dau MongoDB Session;
+:startTransaction();
+
+:Tim doi theo { _id: id, isActive: true };
+if (Khong tim thay?) then (Co)
+  :abortTransaction();
+  :Tra ve loi 404;
+  stop
+else (Tim thay)
+endif
+
+:Kiem tra trang thai doi;
+if (Doi dang BUSY?) then (Co)
+  :abortTransaction();
+  :Tra ve loi 409\n"Khong the giai tan doi dang BUSY";
+  stop
+else (Khong BUSY)
+endif
+
+if (Doi co phuong tien?) then (Co)
+  :Thu hoi toan bo xe ve kho:\nupdateMany vehicles:\n{ status: AVAILABLE, assignedTeamId: null };
+else (Khong co xe)
+endif
+
+:Xoa mem doi:\n{ isActive: false,\nstatus: OFFLINE,\nvehicles: [] };
+
+:commitTransaction();
+:endSession();
+
+:Tra ve:\n"Da giai tan doi va thu hoi phuong tien thanh cong";
+
+stop
+@enduml

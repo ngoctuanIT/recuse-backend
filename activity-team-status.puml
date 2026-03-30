@@ -1,0 +1,36 @@
+@startuml Activity_Team_UpdateStatus
+title Quy trinh Cap Nhat Trang Thai Doi (updateStatus)
+
+start
+
+:Nhan request cap nhat trang thai\n(teamId, newStatus, userRole);
+:Kiem tra ID hop le?;
+if (ID sai?) then (Co)
+  :Tra ve loi 400;
+  stop
+else (OK)
+endif
+
+:Tim doi theo { _id, isActive: true };
+if (Khong tim thay?) then (Co)
+  :Tra ve loi 404;
+  stop
+else (Tim thay)
+endif
+
+:Kiem tra Business Rule;
+if (Team dang BUSY\nva muon chuyen sang khac BUSY?) then (Co)
+  if (Role la ADMIN / COORDINATOR / MANAGER?) then (Khong)
+    :Tra ve loi 409\n"Doi dang BUSY!\nHoan thanh nhiem vu truoc";
+    stop
+  else (Co quyen)
+  endif
+else (Binh thuong)
+endif
+
+:Cap nhat team.status = newStatus;
+:Luu vao DB;
+:Tra ve thong tin doi sau khi cap nhat;
+
+stop
+@enduml

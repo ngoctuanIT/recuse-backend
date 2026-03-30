@@ -1,0 +1,43 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Nguoi Dan (Citizen)" as citizen
+actor "VNPay (External)" as vnpay
+
+rectangle "He Thong Rescue AID - CITIZEN" {
+  usecase "Dang ky tai khoan" as UC1
+  usecase "Dang nhap" as UC2
+  usecase "Xem ho so ca nhan" as UC3
+  usecase "Cap nhat thong tin" as UC4
+  usecase "Doi mat khau" as UC5
+  usecase "Gui yeu cau cuu ho" as UC6
+  usecase "Xem lich su yeu cau" as UC7
+  usecase "Xem chi tiet yeu cau" as UC8
+  usecase "Xac nhan da an toan" as UC9
+  usecase "Huy yeu cau cuu ho" as UC10
+  usecase "Tao link thanh toan VNPay" as UC11
+  usecase "Xem lich su quyen gop" as UC12
+  usecase "Xac nhan ket qua thanh toan" as UC13
+  usecase "Webhook IPN tu dong" as UC14
+}
+
+citizen --> UC1
+citizen --> UC2
+citizen --> UC3
+citizen --> UC4
+citizen --> UC5
+citizen --> UC6
+citizen --> UC7
+citizen --> UC8
+citizen --> UC9
+citizen --> UC10
+citizen --> UC11
+citizen --> UC12
+citizen --> UC13
+
+vnpay --> UC13
+vnpay --> UC14
+
+UC11 .> UC13 : <<include>>
+@enduml

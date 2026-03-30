@@ -1,0 +1,213 @@
+// ============================================================
+// RESCUE BACKEND — DBML for dbdiagram.io
+// Generated from Mongoose Schemas (MongoDB)
+// ============================================================
+
+Project rescue_backend {
+  database_type: 'MongoDB'
+  Note: 'Hệ thống quản lý cứu hộ thiên tai'
+}
+
+// ============================================================
+// TABLE: users
+// ============================================================
+Table users {
+  _id         ObjectId    [pk, note: 'MongoDB Auto ID']
+  userCode    string      [unique, not null, note: 'Mã người dùng (auto-generate từ Counter)']
+  username    string      [unique, not null, note: 'Tên đăng nhập']
+  password    string      [not null, note: 'Mật khẩu (bcrypt hashed)']
+  fullName    string      [not null, note: 'Họ và tên đầy đủ']
+  phone       string      [unique, not null, note: 'Số điện thoại']
+  role        Role_Enum   [not null, default: 'CITIZEN', note: 'ADMIN | COORDINATOR | RESCUE_TEAM | MANAGER | CITIZEN']
+  isActive    boolean     [not null, default: true, note: 'Soft Delete Flag']
+  createdAt   datetime    [note: 'Auto — timestamps']
+  updatedAt   datetime    [note: 'Auto — timestamps']
+}
+
+// ============================================================
+// TABLE: donations
+// ============================================================
+Table donations {
+  _id                ObjectId          [pk, note: 'MongoDB Auto ID']
+  userId             string            [not null, note: 'Lưu ObjectId của User dạng string (indexed) — logical FK → users._id']
+  orderId            string            [unique, not null, note: 'Mã đơn hàng VNPay (indexed)']
+  amount             number            [not null, note: 'Số tiền quyên góp (min: 10,000 VNĐ)']
+  message            string            [default: '', note: 'Lời nhắn của người quyên góp']
+  status             DonationStatus_Enum [not null, default: 'PENDING', note: 'PENDING | SUCCESS | FAILED (indexed)']
+  vnp_TransactionNo  string            [null, note: 'Mã giao dịch từ VNPay (nullable)']
+  createdAt          datetime          [note: 'Auto — timestamps']
+  updatedAt          datetime          [note: 'Auto — timestamps']
+}
+
+// ============================================================
+// TABLE: inventories
+// ============================================================
+Table inventories {
+  _id                ObjectId              [pk, note: 'MongoDB Auto ID']
+  itemName           string                [unique, not null, note: 'Tên vật phẩm (VD: Mì tôm Hảo Hảo)']
+  quantity           number                [not null, default: 0, note: 'Số lượng tồn kho (min: 0)']
+  unit               string                [not null, note: 'Đơn vị tính (Thùng / Chiếc / Chai / Kg)']
+  category           InventoryCategory_Enum [not null, default: 'OTHER', note: 'FOOD | WATER | MEDICAL | EQUIPMENT | CLOTHING | OTHER']
+  lowStockThreshold  number                [not null, default: 10, note: 'Ngưỡng cảnh báo hết hàng']
+  description        string                [null, note: 'Ghi chú bảo quản']
+  expirationDate     datetime              [null, note: 'Hạn sử dụng (FEFO Index)']
+  isActive           boolean               [not null, default: true, note: 'Soft Delete Flag']
+  createdAt          datetime              [note: 'Auto — timestamps']
+  updatedAt          datetime              [note: 'Auto — timestamps']
+
+  indexes {
+    (isActive, quantity, lowStockThreshold) [name: 'idx_low_stock']
+    (isActive, expirationDate) [name: 'idx_expiration_fefo']
+  }
+}
+
+// ============================================================
+// TABLE: rescue_requests
+// ============================================================
+Table rescue_requests {
+  _id             ObjectId          [pk, note: 'MongoDB Auto ID']
+  requestCode     string            [unique, null, note: 'Mã yêu cầu (sparse unique, auto-generate từ Counter)']
+  userId          ObjectId          [not null, ref: > users._id, note: 'FK → User (người tạo yêu cầu)']
+  description     string            [not null, note: 'Mô tả tình trạng khẩn cấp']
+  images          string[]          [null, note: 'Mảng URL ảnh hiện trường']
+  status          RequestStatus_Enum [not null, default: 'PENDING', note: 'PENDING | VERIFIED | ASSIGNED | IN_PROGRESS | COMPLETED | RESOLVED | CANCELLED']
+  assignedTeamId  ObjectId          [null, ref: > rescue_teams._id, note: 'FK → RescueTeam (nullable, default null)']
+  urgencyLevel    UrgencyLevel_Enum [not null, default: 'LOW', note: 'LOW | MEDIUM | HIGH | CRITICAL']
+  evidenceImage   string            [null, note: 'Ảnh chứng thực hoàn thành nhiệm vụ']
+  cancelReason    string            [null, note: 'Lý do hủy (bắt buộc khi status = CANCELLED)']
+  completedAt     datetime          [null, note: 'Thời điểm hoàn thành (KPI metric)']
+  location_type   string            [not null, default: 'Point', note: 'GeoJSON type']
+  location_lng    float             [not null, note: 'GeoJSON kinh độ']
+  location_lat    float             [not null, note: 'GeoJSON vĩ độ']
+  createdAt       datetime          [note: 'Auto — timestamps']
+  updatedAt       datetime          [note: 'Auto — timestamps']
+
+  indexes {
+    (status, createdAt) [name: 'idx_status_created']
+    // location: "2dsphere" — GeoSpatial Index (MongoDB only)
+  }
+}
+
+// ============================================================
+// TABLE: rescue_teams
+// ============================================================
+Table rescue_teams {
+  _id               ObjectId         [pk, note: 'MongoDB Auto ID']
+  teamName          string           [unique, not null, note: 'Tên đội cứu hộ']
+  leaderId          ObjectId         [not null, ref: > users._id, note: 'FK → User (đội trưởng)']
+  status            TeamStatus_Enum  [not null, default: 'AVAILABLE', note: 'AVAILABLE | BUSY | OFFLINE']
+  isActive          boolean          [not null, default: true, note: 'Soft Delete Flag']
+  location_type     string           [default: 'Point', note: 'GeoJSON type']
+  location_lng      float            [not null, note: 'GeoJSON kinh độ hiện tại']
+  location_lat      float            [not null, note: 'GeoJSON vĩ độ hiện tại']
+  createdAt         datetime         [note: 'Auto — timestamps']
+  updatedAt         datetime         [note: 'Auto — timestamps']
+
+  indexes {
+    // currentLocation: "2dsphere" — GeoSpatial Index (MongoDB only)
+  }
+}
+
+// ============================================================
+// TABLE: vehicles
+// ============================================================
+Table vehicles {
+  _id             ObjectId           [pk, note: 'MongoDB Auto ID']
+  name            string             [not null, note: 'Tên phương tiện (VD: Xuồng máy Yamaha 500W)']
+  plateNumber     string             [unique, not null, note: 'Biển số / Mã định danh (VD: CANO-01)']
+  type            VehicleType_Enum   [not null, note: 'BOAT | CAR | HELICOPTER | TRUCK | CANOE | OTHER']
+  capacity        number             [not null, note: 'Sức chứa (min: 1)']
+  status          VehicleStatus_Enum [not null, default: 'AVAILABLE', note: 'AVAILABLE | IN_USE | MAINTENANCE | BROKEN']
+  assignedTeamId  ObjectId           [null, ref: > rescue_teams._id, note: 'FK → RescueTeam (nullable)']
+  isActive        boolean            [not null, default: true, note: 'Soft Delete Flag']
+  createdAt       datetime           [note: 'Auto — timestamps']
+  updatedAt       datetime           [note: 'Auto — timestamps']
+}
+
+// ============================================================
+// TABLE: counters  (Auto-increment helper)
+// ============================================================
+Table counters {
+  _id        ObjectId  [pk, note: 'MongoDB Auto ID']
+  modelName  string    [unique, not null, note: 'Tên model: rescue_request | rescue_team ...']
+  seq        number    [not null, default: 0, note: 'Số thứ tự hiện tại (auto-increment)']
+}
+
+// ============================================================
+// JUNCTION TABLE: rescue_team_members (Many-to-Many)
+// MongoDB lưu dạng embedded array trong rescue_teams.members[]
+// ============================================================
+Table rescue_team_members {
+  team_id    ObjectId  [ref: > rescue_teams._id, note: 'FK → RescueTeam']
+  user_id    ObjectId  [ref: > users._id,        note: 'FK → User (thành viên)']
+
+  indexes {
+    (team_id, user_id) [pk]
+  }
+}
+
+// ============================================================
+// ENUM DEFINITIONS
+// ============================================================
+
+Enum Role_Enum {
+  ADMIN          [note: 'Quản trị viên hệ thống']
+  COORDINATOR    [note: 'Điều phối viên cứu hộ']
+  RESCUE_TEAM    [note: 'Thành viên đội cứu hộ']
+  MANAGER        [note: 'Quản lý kho / phương tiện']
+  CITIZEN        [note: 'Người dân (mặc định)']
+}
+
+Enum DonationStatus_Enum {
+  PENDING   [note: 'Chờ xác nhận thanh toán']
+  SUCCESS   [note: 'Thanh toán thành công']
+  FAILED    [note: 'Thanh toán thất bại']
+}
+
+Enum InventoryCategory_Enum {
+  FOOD       [note: 'Thực phẩm']
+  WATER      [note: 'Nước uống']
+  MEDICAL    [note: 'Y tế / Thuốc men']
+  EQUIPMENT  [note: 'Thiết bị cứu hộ']
+  CLOTHING   [note: 'Quần áo / Chăn màn']
+  OTHER      [note: 'Khác']
+}
+
+Enum RequestStatus_Enum {
+  PENDING      [note: 'Vừa tạo, chờ xác minh']
+  VERIFIED     [note: 'Đã xác minh, chờ phân công']
+  ASSIGNED     [note: 'Đã phân công đội']
+  IN_PROGRESS  [note: 'Đội đang thực hiện cứu hộ']
+  COMPLETED    [note: 'Đội báo cáo hoàn thành']
+  RESOLVED     [note: 'Admin xác nhận hoàn tất']
+  CANCELLED    [note: 'Đã hủy (có lý do)']
+}
+
+Enum UrgencyLevel_Enum {
+  LOW       [note: 'Thấp']
+  MEDIUM    [note: 'Trung bình']
+  HIGH      [note: 'Cao']
+  CRITICAL  [note: 'Khẩn cấp tối đa']
+}
+
+Enum TeamStatus_Enum {
+  AVAILABLE  [note: 'Đội đang rảnh, sẵn sàng nhận ca']
+  BUSY       [note: 'Đội đang thực hiện nhiệm vụ']
+  OFFLINE    [note: 'Đội không hoạt động']
+}
+
+Enum VehicleType_Enum {
+  BOAT        [note: 'Thuyền / Xuồng']
+  CAR         [note: 'Xe ô tô']
+  HELICOPTER  [note: 'Trực thăng']
+  TRUCK       [note: 'Xe tải']
+  CANOE       [note: 'Canoe / Thuyền nhỏ']
+  OTHER       [note: 'Phương tiện khác']
+}
+
+Enum VehicleStatus_Enum {
+  AVAILABLE    [note: 'Đang rảnh, nằm tại kho']
+  IN_USE       [note: 'Đang đi cứu hộ']
+  MAINTENANCE  [note: 'Đang bảo dưỡng định kỳ']
+  BROKEN       [note: 'Đang hỏng, chờ sửa chữa']
+}

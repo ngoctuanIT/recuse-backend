@@ -3,9 +3,9 @@ import {
     Body, Req, Query, Res,
     Param, HttpStatus, UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { Request, Response } from 'express';
-import { AuthGuard } from '@nestjs/passport'; // Sử dụng đúng Passport JWT
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Response } from 'express';
+import { AuthGuard } from '@nestjs/passport';
 
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -24,7 +24,7 @@ export class DonationsController {
     // 1. TẠO LINK THANH TOÁN (Chỉ Citizen/User mới quyên góp)
     // =========================================================================
     @ApiBearerAuth()
-    @UseGuards(AuthGuard('jwt')) // Chỉ cần check đăng nhập là được quyên góp
+    @UseGuards(AuthGuard('jwt'))
     @Post('vnpay-create')
     @ApiOperation({ summary: 'Tạo link thanh toán VNPAY (Yêu cầu đăng nhập)' })
     async createPayment(@Body() body: CreateDonationDto, @Req() req: any) {
@@ -32,7 +32,6 @@ export class DonationsController {
         if (Array.isArray(ipAddr)) ipAddr = ipAddr[0];
         if (ipAddr === '::1' || ipAddr === '::ffff:127.0.0.1') ipAddr = '127.0.0.1';
 
-        // ĐÃ FIX: Lấy userId từ req.user.sub (Khớp với cấu hình trả về trong JwtStrategy)
         const userId = req.user?.sub;
 
         return this.donationsService.createVNPayUrl(
@@ -51,10 +50,7 @@ export class DonationsController {
     @Get('my-history')
     @ApiOperation({ summary: 'Xem lịch sử quyên góp cá nhân' })
     async getMyHistory(@Req() req: any, @Query() query: GetDonationsDto) {
-
-        // ĐÃ FIX: Lấy userId từ req.user.sub
         const userId = req.user?.sub;
-
         return this.donationsService.findHistoryByUser(userId, query);
     }
 

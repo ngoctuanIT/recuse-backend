@@ -1,0 +1,313 @@
+@startuml Rescue_Backend_UseCase_Diagram
+
+' ============================================================
+' RESCUE BACKEND — USE CASE DIAGRAM
+' Paste toàn bộ nội dung này vào: https://www.plantuml.com/plantuml/uml
+' ============================================================
+
+!theme plain
+skinparam backgroundColor #1a1a2e
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+
+skinparam actor {
+    BackgroundColor #312e81
+    BorderColor #818cf8
+    FontColor #e0e0e0
+}
+
+skinparam usecase {
+    BackgroundColor #1e1b4b
+    BorderColor #6366f1
+    FontColor #e0e0e0
+    ArrowColor #818cf8
+}
+
+skinparam package {
+    BackgroundColor #0f172a
+    BorderColor #334155
+    FontColor #94a3b8
+}
+
+skinparam ArrowColor #818cf8
+skinparam ArrowFontColor #94a3b8
+
+' ============================================================
+' ACTORS
+' ============================================================
+actor "Người Dân\n(CITIZEN)"          as CITIZEN
+actor "Điều Phối Viên\n(COORDINATOR)" as COORDINATOR
+actor "Đội Cứu Hộ\n(RESCUE_TEAM)"    as RESCUE_TEAM
+actor "Quản Lý Kho/Xe\n(MANAGER)"    as MANAGER
+actor "Quản Trị\n(ADMIN)"            as ADMIN
+actor "VNPay\n(External)"            as VNPAY
+
+' ============================================================
+' 1. AUTHENTICATION
+' ============================================================
+package "🔐 Xác Thực (Authentication)" {
+    usecase "Đăng ký tài khoản"    as UC_REGISTER
+    usecase "Đăng nhập lấy Token"  as UC_LOGIN
+    usecase "Kiểm tra Token"       as UC_CHECK_TOKEN
+}
+
+' ============================================================
+' 2. QUẢN LÝ TÀI KHOẢN CÁ NHÂN
+' ============================================================
+package "👤 Tài Khoản Cá Nhân" {
+    usecase "Xem hồ sơ cá nhân"    as UC_VIEW_PROFILE
+    usecase "Cập nhật thông tin"   as UC_UPDATE_PROFILE
+    usecase "Đổi mật khẩu"        as UC_CHANGE_PASSWORD
+}
+
+' ============================================================
+' 3. QUYÊN GÓP (DONATIONS)
+' ============================================================
+package "💰 Quyên Góp (VNPay)" {
+    usecase "Tạo link thanh toán\nVNPay"        as UC_CREATE_PAYMENT
+    usecase "Xem lịch sử quyên\ngóp cá nhân"   as UC_MY_DONATIONS
+    usecase "Xác nhận kết quả\nthanh toán"      as UC_VNPAY_RETURN
+    usecase "Webhook IPN\n(Tự động xác nhận)"   as UC_VNPAY_IPN
+    usecase "Xem toàn bộ\nquyên góp"           as UC_ALL_DONATIONS
+    usecase "Xem chi tiết\n1 đơn quyên góp"    as UC_DONATION_DETAIL
+}
+
+' ============================================================
+' 4. YÊU CẦU CỨU HỘ (RESCUE REQUESTS)
+' ============================================================
+package "🆘 Yêu Cầu Cứu Hộ (Rescue Requests)" {
+    usecase "Gửi yêu cầu cứu hộ\nmới"          as UC_CREATE_REQUEST
+    usecase "Xem lịch sử kêu\ncứu của tôi"     as UC_MY_REQUESTS
+    usecase "Xem chi tiết\n1 yêu cầu"          as UC_REQUEST_DETAIL
+    usecase "Xác nhận đã\nan toàn (Đóng đơn)"  as UC_CONFIRM_RESCUED
+    usecase "Hủy yêu cầu\ncứu hộ"             as UC_CANCEL_REQUEST
+
+    usecase "Xem toàn bộ\nyêu cầu"            as UC_ALL_REQUESTS
+    usecase "Xác minh yêu cầu\n& Phân loại khẩn cấp" as UC_VERIFY_REQUEST
+    usecase "Phân công đội\ncứu hộ"           as UC_ASSIGN_TEAM
+
+    usecase "Radar: Tìm yêu cầu\ngần vị trí" as UC_NEARBY_REQUESTS
+    usecase "Xem nhiệm vụ\nđược phân công"   as UC_ASSIGNED_TASKS
+    usecase "Cập nhật tiến độ\ncứu hộ"       as UC_UPDATE_STATUS
+}
+
+' ============================================================
+' 5. ĐỘI CỨU HỘ (RESCUE TEAMS)
+' ============================================================
+package "🚑 Đội Cứu Hộ (Rescue Teams)" {
+    usecase "Xem toàn bộ\nđội cứu hộ"           as UC_ALL_TEAMS
+    usecase "Xem đội đang\nrảnh (AVAILABLE)"    as UC_AVAILABLE_TEAMS
+    usecase "Xem chi tiết\n1 đội"               as UC_TEAM_DETAIL
+
+    usecase "Tạo đội cứu\nhộ mới"              as UC_CREATE_TEAM
+    usecase "Cập nhật thông\ntin đội"           as UC_UPDATE_TEAM
+    usecase "Giải tán đội\n(Thu hồi xe)"        as UC_DELETE_TEAM
+    usecase "Thêm thành\nviên vào đội"          as UC_ADD_MEMBER
+    usecase "Xóa thành viên\nkhỏi đội"         as UC_REMOVE_MEMBER
+    usecase "Cấp phương tiện\ncho đội"          as UC_ADD_VEHICLE
+    usecase "Thu hồi phương\ntiện của đội"      as UC_REMOVE_VEHICLE
+
+    usecase "Cập nhật vị trí\nGPS (Real-time)" as UC_UPDATE_LOCATION
+    usecase "Cập nhật trạng\nthái đội"         as UC_UPDATE_TEAM_STATUS
+}
+
+' ============================================================
+' 6. PHƯƠNG TIỆN (VEHICLES)
+' ============================================================
+package "🚗 Phương Tiện (Vehicles)" {
+    usecase "Xem toàn bộ\nphương tiện"          as UC_ALL_VEHICLES
+    usecase "Xem xe đang\nrảnh"                 as UC_AVAILABLE_VEHICLES
+    usecase "Xem chi tiết\n1 xe"                as UC_VEHICLE_DETAIL
+    usecase "Thêm phương tiện\nmới vào kho"     as UC_CREATE_VEHICLE
+    usecase "Cập nhật thông\ntin xe"            as UC_UPDATE_VEHICLE
+    usecase "Cập nhật tình\ntrạng xe"           as UC_UPDATE_VEHICLE_STATUS
+    usecase "Thanh lý/Xóa\nmềm xe"             as UC_DELETE_VEHICLE
+}
+
+' ============================================================
+' 7. KHO HÀNG (INVENTORIES)
+' ============================================================
+package "📦 Kho Hàng Cứu Trợ (Inventories)" {
+    usecase "Xem toàn bộ\nkho hàng"            as UC_ALL_INVENTORY
+    usecase "Xem chi tiết\n1 vật phẩm"         as UC_INVENTORY_DETAIL
+    usecase "Thêm vật phẩm\nmới vào kho"       as UC_CREATE_INVENTORY
+    usecase "Sửa thông tin\nvật phẩm"          as UC_UPDATE_INVENTORY
+    usecase "Nhập / Xuất\nkho"                 as UC_UPDATE_STOCK
+    usecase "Ngừng cung cấp\nvật phẩm"        as UC_DELETE_INVENTORY
+}
+
+' ============================================================
+' 8. QUẢN TRỊ (ADMIN ONLY)
+' ============================================================
+package "⚙️ Quản Trị Hệ Thống (Admin)" {
+    usecase "Xem danh sách\ntất cả người dùng" as UC_ALL_USERS
+    usecase "Tìm user\nqua SĐT"               as UC_FIND_USER
+    usecase "Cấp quyền\n(Đổi Role)"           as UC_CHANGE_ROLE
+    usecase "Vô hiệu hóa\ntài khoản"         as UC_DEACTIVATE_USER
+}
+
+' ============================================================
+' CITIZEN — Kết nối Use Cases
+' ============================================================
+CITIZEN --> UC_REGISTER
+CITIZEN --> UC_LOGIN
+CITIZEN --> UC_CHECK_TOKEN
+CITIZEN --> UC_VIEW_PROFILE
+CITIZEN --> UC_UPDATE_PROFILE
+CITIZEN --> UC_CHANGE_PASSWORD
+
+CITIZEN --> UC_CREATE_PAYMENT
+CITIZEN --> UC_MY_DONATIONS
+CITIZEN --> UC_VNPAY_RETURN
+
+CITIZEN --> UC_CREATE_REQUEST
+CITIZEN --> UC_MY_REQUESTS
+CITIZEN --> UC_REQUEST_DETAIL
+CITIZEN --> UC_CONFIRM_RESCUED
+CITIZEN --> UC_CANCEL_REQUEST
+
+' ============================================================
+' COORDINATOR — Kết nối Use Cases
+' ============================================================
+COORDINATOR --> UC_LOGIN
+COORDINATOR --> UC_VIEW_PROFILE
+COORDINATOR --> UC_UPDATE_PROFILE
+COORDINATOR --> UC_CHANGE_PASSWORD
+
+COORDINATOR --> UC_ALL_REQUESTS
+COORDINATOR --> UC_REQUEST_DETAIL
+COORDINATOR --> UC_VERIFY_REQUEST
+COORDINATOR --> UC_ASSIGN_TEAM
+COORDINATOR --> UC_CANCEL_REQUEST
+COORDINATOR --> UC_ASSIGNED_TASKS
+
+COORDINATOR --> UC_ALL_TEAMS
+COORDINATOR --> UC_AVAILABLE_TEAMS
+COORDINATOR --> UC_TEAM_DETAIL
+COORDINATOR --> UC_UPDATE_TEAM
+COORDINATOR --> UC_ADD_VEHICLE
+COORDINATOR --> UC_REMOVE_VEHICLE
+COORDINATOR --> UC_UPDATE_TEAM_STATUS
+
+COORDINATOR --> UC_ALL_VEHICLES
+COORDINATOR --> UC_AVAILABLE_VEHICLES
+COORDINATOR --> UC_VEHICLE_DETAIL
+COORDINATOR --> UC_UPDATE_VEHICLE_STATUS
+
+COORDINATOR --> UC_ALL_INVENTORY
+COORDINATOR --> UC_INVENTORY_DETAIL
+COORDINATOR --> UC_UPDATE_STOCK
+
+COORDINATOR --> UC_DONATION_DETAIL
+
+' ============================================================
+' RESCUE_TEAM — Kết nối Use Cases
+' ============================================================
+RESCUE_TEAM --> UC_LOGIN
+RESCUE_TEAM --> UC_VIEW_PROFILE
+RESCUE_TEAM --> UC_UPDATE_PROFILE
+RESCUE_TEAM --> UC_CHANGE_PASSWORD
+
+RESCUE_TEAM --> UC_NEARBY_REQUESTS
+RESCUE_TEAM --> UC_ASSIGNED_TASKS
+RESCUE_TEAM --> UC_REQUEST_DETAIL
+RESCUE_TEAM --> UC_UPDATE_STATUS
+
+RESCUE_TEAM --> UC_ALL_TEAMS
+RESCUE_TEAM --> UC_TEAM_DETAIL
+RESCUE_TEAM --> UC_UPDATE_LOCATION
+RESCUE_TEAM --> UC_UPDATE_TEAM_STATUS
+
+RESCUE_TEAM --> UC_ALL_INVENTORY
+
+' ============================================================
+' MANAGER — Kết nối Use Cases
+' ============================================================
+MANAGER --> UC_LOGIN
+MANAGER --> UC_VIEW_PROFILE
+MANAGER --> UC_UPDATE_PROFILE
+MANAGER --> UC_CHANGE_PASSWORD
+
+MANAGER --> UC_CREATE_TEAM
+MANAGER --> UC_ALL_TEAMS
+MANAGER --> UC_AVAILABLE_TEAMS
+MANAGER --> UC_TEAM_DETAIL
+MANAGER --> UC_UPDATE_TEAM
+MANAGER --> UC_DELETE_TEAM
+MANAGER --> UC_ADD_MEMBER
+MANAGER --> UC_REMOVE_MEMBER
+MANAGER --> UC_ADD_VEHICLE
+MANAGER --> UC_REMOVE_VEHICLE
+MANAGER --> UC_UPDATE_TEAM_STATUS
+
+MANAGER --> UC_ALL_VEHICLES
+MANAGER --> UC_AVAILABLE_VEHICLES
+MANAGER --> UC_VEHICLE_DETAIL
+MANAGER --> UC_CREATE_VEHICLE
+MANAGER --> UC_UPDATE_VEHICLE
+MANAGER --> UC_UPDATE_VEHICLE_STATUS
+MANAGER --> UC_DELETE_VEHICLE
+
+MANAGER --> UC_ALL_INVENTORY
+MANAGER --> UC_INVENTORY_DETAIL
+MANAGER --> UC_CREATE_INVENTORY
+MANAGER --> UC_UPDATE_INVENTORY
+MANAGER --> UC_UPDATE_STOCK
+MANAGER --> UC_DELETE_INVENTORY
+
+MANAGER --> UC_ALL_DONATIONS
+MANAGER --> UC_DONATION_DETAIL
+
+' ============================================================
+' ADMIN — Kết nối Use Cases (Kế thừa tất cả + riêng của Admin)
+' ============================================================
+ADMIN --> UC_LOGIN
+ADMIN --> UC_VIEW_PROFILE
+ADMIN --> UC_UPDATE_PROFILE
+ADMIN --> UC_CHANGE_PASSWORD
+
+ADMIN --> UC_ALL_USERS
+ADMIN --> UC_FIND_USER
+ADMIN --> UC_CHANGE_ROLE
+ADMIN --> UC_DEACTIVATE_USER
+
+ADMIN --> UC_ALL_REQUESTS
+ADMIN --> UC_REQUEST_DETAIL
+ADMIN --> UC_VERIFY_REQUEST
+ADMIN --> UC_ASSIGN_TEAM
+ADMIN --> UC_CANCEL_REQUEST
+
+ADMIN --> UC_CREATE_TEAM
+ADMIN --> UC_ALL_TEAMS
+ADMIN --> UC_TEAM_DETAIL
+ADMIN --> UC_UPDATE_TEAM
+ADMIN --> UC_DELETE_TEAM
+ADMIN --> UC_ADD_MEMBER
+ADMIN --> UC_REMOVE_MEMBER
+ADMIN --> UC_ADD_VEHICLE
+ADMIN --> UC_REMOVE_VEHICLE
+ADMIN --> UC_UPDATE_TEAM_STATUS
+
+ADMIN --> UC_ALL_VEHICLES
+ADMIN --> UC_CREATE_VEHICLE
+ADMIN --> UC_UPDATE_VEHICLE
+ADMIN --> UC_UPDATE_VEHICLE_STATUS
+ADMIN --> UC_DELETE_VEHICLE
+
+ADMIN --> UC_ALL_INVENTORY
+ADMIN --> UC_INVENTORY_DETAIL
+ADMIN --> UC_CREATE_INVENTORY
+ADMIN --> UC_UPDATE_INVENTORY
+ADMIN --> UC_UPDATE_STOCK
+ADMIN --> UC_DELETE_INVENTORY
+
+ADMIN --> UC_ALL_DONATIONS
+ADMIN --> UC_DONATION_DETAIL
+
+' ============================================================
+' VNPAY (External System)
+' ============================================================
+VNPAY --> UC_VNPAY_RETURN
+VNPAY --> UC_VNPAY_IPN
+
+@enduml

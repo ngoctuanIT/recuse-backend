@@ -1,0 +1,72 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Quan Tri (Admin)" as admin
+
+rectangle "He Thong Rescue AID - ADMIN" {
+  usecase "Dang nhap" as UC1
+  usecase "Xem ho so ca nhan" as UC2
+  usecase "Cap nhat thong tin" as UC3
+  usecase "Doi mat khau" as UC4
+  usecase "Xem danh sach nguoi dung" as UC5
+  usecase "Tim user qua so dien thoai" as UC6
+  usecase "Cap quyen (Doi Role)" as UC7
+  usecase "Vo hieu hoa tai khoan" as UC8
+  usecase "Xem tat ca yeu cau cuu ho" as UC9
+  usecase "Xac minh & Phan loai khan cap" as UC10
+  usecase "Phan cong doi cuu ho" as UC11
+  usecase "Huy yeu cau cuu ho" as UC12
+  usecase "Tao doi cuu ho moi" as UC13
+  usecase "Xem danh sach doi" as UC14
+  usecase "Cap nhat thong tin doi" as UC15
+  usecase "Giai tan doi" as UC16
+  usecase "Them/Xoa thanh vien doi" as UC17
+  usecase "Cap/Thu hoi phuong tien doi" as UC18
+  usecase "Them phuong tien moi" as UC19
+  usecase "Xem danh sach phuong tien" as UC20
+  usecase "Cap nhat thong tin xe" as UC21
+  usecase "Cap nhat tinh trang xe" as UC22
+  usecase "Thanh ly xe" as UC23
+  usecase "Them vat pham vao kho" as UC24
+  usecase "Xem kho hang" as UC25
+  usecase "Sua thong tin vat pham" as UC26
+  usecase "Nhap / Xuat kho" as UC27
+  usecase "Ngung cung cap vat pham" as UC28
+  usecase "Xem danh sach quyen gop" as UC29
+  usecase "Xem chi tiet don quyen gop" as UC30
+}
+
+admin --> UC1
+admin --> UC2
+admin --> UC3
+admin --> UC4
+admin --> UC5
+admin --> UC6
+admin --> UC7
+admin --> UC8
+admin --> UC9
+admin --> UC10
+admin --> UC11
+admin --> UC12
+admin --> UC13
+admin --> UC14
+admin --> UC15
+admin --> UC16
+admin --> UC17
+admin --> UC18
+admin --> UC19
+admin --> UC20
+admin --> UC21
+admin --> UC22
+admin --> UC23
+admin --> UC24
+admin --> UC25
+admin --> UC26
+admin --> UC27
+admin --> UC28
+admin --> UC29
+admin --> UC30
+
+UC10 .> UC11 : <<include>>
+@enduml

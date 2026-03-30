@@ -1,0 +1,80 @@
+@startuml Activity_Donation_VNPay
+title Quy trinh Quyen Gop Tien qua VNPay
+
+start
+
+partition "CITIZEN - Tao Thanh Toan" {
+  :Citizen gui yeu cau quyen gop\n(amount, message);
+  :Lay cau hinh VNPay tu .env\n(TMN_CODE, HASH_SECRET, URL, RETURN_URL);
+  :Tao orderId duy nhat\nDONATE_YYMMDDHHMMSS_XXXX;
+  :Luu Donation vao DB:\n{ userId, orderId, amount, status: PENDING };
+  :Tao vnpParams va ky HMAC-SHA512;
+  :Tra ve paymentUrl;
+  :Chuyen huong Citizen den cong VNPAY;
+}
+
+partition "VNPAY - Xu Ly Thanh Toan" {
+  :Nguoi dung thanh toan tai cong VNPay;
+  fork
+    :VNPay goi RETURN URL\n(Hien thi ket qua cho FE);
+  fork again
+    :VNPay goi IPN Webhook\n(Xu ly phia server - an toan hon);
+  end fork
+}
+
+partition "Server - Xu Ly Return URL" {
+  :Nhan query params tu VNPay;
+  :Xac minh chu ky SecureHash;
+  if (Chu ky hop le?) then (Khong)
+    :Tra ve { isSuccess: false,\n"Chu ky khong hop le" };
+    stop
+  else (Co)
+  endif
+  if (vnp_ResponseCode == '00'?) then (Co)
+    :Tra ve { isSuccess: true,\n"Thanh toan thanh cong" };
+  else (Khong)
+    :Tra ve { isSuccess: false,\n"Giao dich that bai" };
+  endif
+}
+
+partition "Server - Xu Ly IPN Webhook (Quan Trong)" {
+  :Nhan IPN tu VNPay;
+  :Xac minh chu ky SecureHash;
+  if (Chu ky sai?) then (Co)
+    :Tra ve { RspCode: '97',\n'Checksum failed' };
+    stop
+  else (OK)
+  endif
+
+  :Tim Donation theo orderId;
+  if (Khong tim thay?) then (Co)
+    :Tra ve { RspCode: '01', 'Not found' };
+    stop
+  else (Tim thay)
+  endif
+
+  :Kiem tra so tien khop?;
+  if (So tien sai?) then (Co)
+    :Tra ve { RspCode: '04', 'Invalid amount' };
+    stop
+  else (Khop)
+  endif
+
+  :Kiem tra trang thai da xu ly chua?;
+  if (Khong con PENDING?) then (Co)
+    :Tra ve { RspCode: '02', 'Already confirmed' };
+    stop
+  else (Chua xu ly)
+  endif
+
+  if (vnp_ResponseCode == '00'?) then (Co)
+    :Cap nhat:\n{ status: SUCCESS,\nvnp_TransactionNo };
+  else (Khong)
+    :Cap nhat:\n{ status: FAILED };
+  endif
+
+  :Tra ve { RspCode: '00', 'Confirm Success' };
+}
+
+stop
+@enduml

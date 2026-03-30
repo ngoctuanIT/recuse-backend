@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types, Schema as MongooseSchema } from 'mongoose';
 import { DonationStatus } from '../enums/donation-status.enum';
 
 export type DonationDocument = HydratedDocument<Donation>;
@@ -7,8 +7,8 @@ export type DonationDocument = HydratedDocument<Donation>;
 @Schema({ timestamps: true })
 export class Donation {
     // THÊM MỚI: Liên kết đơn hàng với người dùng
-    @Prop({ required: true, index: true })
-    userId: string;
+    @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true, index: true })
+    userId: Types.ObjectId;
 
     @Prop({ required: true, unique: true, index: true })
     orderId: string;

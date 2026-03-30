@@ -1,0 +1,38 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Doi Cuu Ho (Rescue Team)" as team
+
+rectangle "He Thong Rescue AID - RESCUE TEAM" {
+  usecase "Dang nhap" as UC1
+  usecase "Xem ho so ca nhan" as UC2
+  usecase "Cap nhat thong tin" as UC3
+  usecase "Doi mat khau" as UC4
+  usecase "Radar: Tim yeu cau gan vi tri" as UC5
+  usecase "Xem nhiem vu duoc phan cong" as UC6
+  usecase "Xem chi tiet yeu cau" as UC7
+  usecase "Cap nhat tien do cuu ho" as UC8
+  usecase "Xem danh sach doi cuu ho" as UC9
+  usecase "Xem chi tiet doi minh" as UC10
+  usecase "Cap nhat vi tri GPS" as UC11
+  usecase "Cap nhat trang thai doi" as UC12
+  usecase "Xem kho hang (chi doc)" as UC13
+}
+
+team --> UC1
+team --> UC2
+team --> UC3
+team --> UC4
+team --> UC5
+team --> UC6
+team --> UC7
+team --> UC8
+team --> UC9
+team --> UC10
+team --> UC11
+team --> UC12
+team --> UC13
+
+UC6 .> UC8 : <<include>>
+@enduml

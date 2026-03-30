@@ -1,0 +1,29 @@
+@startuml Activity_Auth_Login
+title Quy trinh Dang Nhap (signIn)
+
+start
+
+:Nhan request dang nhap (phone, password);
+
+:Tim User theo so dien thoai;
+if (User ton tai?) then (Khong)
+  :Tra ve loi 401\n"SDT hoac mat khau khong chinh xac";
+  stop
+else (Co)
+endif
+
+:So sanh mat khau voi bcrypt.compare();
+if (Mat khau khop?) then (Khong)
+  :Tra ve loi 401\n"SDT hoac mat khau khong chinh xac";
+  stop
+else (Co)
+endif
+
+:Tao JWT payload\n{ sub, phone, username, role, userCode };
+
+:Ky JWT Token (jwtService.signAsync);
+
+:Tra ve ket qua:\n{ access_token, user: { _id, userCode, fullName, phone, role } };
+
+stop
+@enduml

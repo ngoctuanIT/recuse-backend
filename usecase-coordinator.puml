@@ -1,0 +1,58 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Dieu Phoi Vien (Coordinator)" as coordinator
+
+rectangle "He Thong Rescue AID - COORDINATOR" {
+  usecase "Dang nhap" as UC1
+  usecase "Xem ho so ca nhan" as UC2
+  usecase "Cap nhat thong tin" as UC3
+  usecase "Doi mat khau" as UC4
+  usecase "Xem tat ca yeu cau cuu ho" as UC5
+  usecase "Xem chi tiet yeu cau" as UC6
+  usecase "Xac minh & Phan loai khan cap" as UC7
+  usecase "Phan cong doi cuu ho" as UC8
+  usecase "Huy yeu cau cuu ho" as UC9
+  usecase "Xem nhiem vu duoc phan cong" as UC10
+  usecase "Xem danh sach doi cuu ho" as UC11
+  usecase "Xem doi dang ranh" as UC12
+  usecase "Cap nhat thong tin doi" as UC13
+  usecase "Cap phuong tien cho doi" as UC14
+  usecase "Thu hoi phuong tien doi" as UC15
+  usecase "Cap nhat trang thai doi" as UC16
+  usecase "Xem danh sach phuong tien" as UC17
+  usecase "Xem xe dang ranh" as UC18
+  usecase "Cap nhat tinh trang xe" as UC19
+  usecase "Xem kho hang" as UC20
+  usecase "Xem chi tiet vat pham" as UC21
+  usecase "Nhap / Xuat kho" as UC22
+  usecase "Xem chi tiet don quyen gop" as UC23
+}
+
+coordinator --> UC1
+coordinator --> UC2
+coordinator --> UC3
+coordinator --> UC4
+coordinator --> UC5
+coordinator --> UC6
+coordinator --> UC7
+coordinator --> UC8
+coordinator --> UC9
+coordinator --> UC10
+coordinator --> UC11
+coordinator --> UC12
+coordinator --> UC13
+coordinator --> UC14
+coordinator --> UC15
+coordinator --> UC16
+coordinator --> UC17
+coordinator --> UC18
+coordinator --> UC19
+coordinator --> UC20
+coordinator --> UC21
+coordinator --> UC22
+coordinator --> UC23
+
+UC7 .> UC8 : <<include>>
+@enduml

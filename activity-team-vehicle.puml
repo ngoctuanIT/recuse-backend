@@ -1,0 +1,69 @@
+@startuml Activity_Team_Vehicle_Transaction
+title Quy trinh Cap / Thu Hoi Phuong Tien cho Doi (Co Transaction)
+
+start
+
+:Nhan request (teamId, vehicleId);
+:Kiem tra dinh dang ID hop le?;
+if (ID khong hop le?) then (Co)
+  :Tra ve loi 400;
+  stop
+else (OK)
+endif
+
+partition "addVehicle - Cap phuong tien" {
+  :Bat dau MongoDB Session;
+  :startTransaction();
+
+  :Tim xe theo:\n{ _id: vehicleId, status: AVAILABLE, isActive: true };
+  if (Xe khong ranh / khong ton tai?) then (Co)
+    :abortTransaction();
+    :Tra ve loi 400\n"Xe khong ton tai, hong, hoac doi khac lay roi";
+    stop
+  else (Co xe)
+  endif
+
+  :Cap nhat Vehicle:\n{ status: IN_USE, assignedTeamId: teamId };
+
+  :Them xe vao doi:\n$addToSet vehicles: vehicleId;
+  if (Doi khong ton tai?) then (Co)
+    :abortTransaction();
+    :Tra ve loi 404;
+    stop
+  else (OK)
+  endif
+
+  :commitTransaction();
+  :endSession();
+  :Tra ve thong tin doi + danh sach xe;
+}
+
+stop
+
+|
+
+start
+
+partition "removeVehicle - Thu hoi phuong tien" {
+  :Bat dau MongoDB Session;
+  :startTransaction();
+
+  :Tim xe theo:\n{ _id: vehicleId, assignedTeamId: teamId };
+  if (Xe khong thuoc doi nay?) then (Co)
+    :abortTransaction();
+    :Tra ve loi 400\n"Xe khong thuoc quyen quan ly cua doi";
+    stop
+  else (Dung xe)
+  endif
+
+  :Tra xe ve kho:\n{ status: AVAILABLE, assignedTeamId: null };
+
+  :Xoa xe khoi danh sach doi:\n$pull vehicles: vehicleId;
+
+  :commitTransaction();
+  :endSession();
+  :Tra ve danh sach xe con lai;
+}
+
+stop
+@enduml

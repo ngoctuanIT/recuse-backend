@@ -1,0 +1,26 @@
+@startuml Activity_Auth_Register
+title Quy trinh Dang Ky Tai Khoan (signUp)
+
+start
+
+:Nhan request dang ky (phone, password, fullName);
+
+:Kiem tra so dien thoai da ton tai?;
+if (Phone da ton tai?) then (Co)
+  :Tra ve loi 400\n"So DT da duoc dang ky!";
+  stop
+else (Chua)
+endif
+
+:Hash mat khau voi bcrypt;
+
+:Goi CountersService.getNextSequence('user')\nLay so thu tu tang tu dong;
+
+:Tao userCode = USR-00001;
+
+:Luu User moi vao MongoDB;
+
+:Tra ve ket qua:\n{ message, userCode, phone };
+
+stop
+@enduml

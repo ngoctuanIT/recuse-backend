@@ -99,7 +99,7 @@ export class DonationsService {
     }
 
     // =========================================================================
-    // 1. TẠO LINK THANH TOÁN (Cập nhật thêm userId)
+    // 1. TẠO LINK THANH TOÁN (Đã dọn dẹp param username)
     // =========================================================================
     async createVNPayUrl(userId: string, ipAddr: string, amount: number, message?: string) {
         const tmnCode = this.getConfig('VNP_TMN_CODE');
@@ -110,7 +110,7 @@ export class DonationsService {
         const createDate = this.getVnpayDate();
         const orderInfo = message || 'Quyen gop cuu ho';
 
-        // THÊM userId VÀO LÚC TẠO ĐƠN HÀNG
+        // Chỉ lưu userId (chuẩn ObjectId), không lưu username rác vào DB
         await this.donationModel.create({
             userId,
             orderId,
@@ -140,7 +140,7 @@ export class DonationsService {
 
         const paymentUrl = vnpUrl + '?' + qs.stringify(sortedParams, { encode: false });
 
-        this.logger.log(`Created payment: ${orderId} | User: ${userId} | ${amount}đ`);
+        this.logger.log(`Created payment: ${orderId} | User ID: ${userId} | ${amount}đ`);
         return { paymentUrl, orderId };
     }
 
@@ -224,6 +224,7 @@ export class DonationsService {
         const [data, total] = await Promise.all([
             this.donationModel
                 .find(filter)
+                .populate('userId', 'username fullName') // 🔥 Móc data User vào đây
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
@@ -244,6 +245,7 @@ export class DonationsService {
     async findOne(orderId: string) {
         const donation = await this.donationModel
             .findOne({ orderId })
+            .populate('userId', 'username fullName') // 🔥 Móc data User vào đây
             .select('-__v')
             .lean();
 
@@ -255,19 +257,19 @@ export class DonationsService {
     }
 
     // =========================================================================
-    // 6. THÊM MỚI: LẤY LỊCH SỬ CỦA TỪNG NGƯỜI DÙNG
+    // 6. LẤY LỊCH SỬ CỦA TỪNG NGƯỜI DÙNG
     // =========================================================================
     async findHistoryByUser(userId: string, dto: GetDonationsDto) {
         const { page = 1, limit = 10, status } = dto;
         const skip = (page - 1) * limit;
 
-        // Bắt buộc lọc theo userId
         const filter: Record<string, any> = { userId };
         if (status) filter.status = status;
 
         const [data, total] = await Promise.all([
             this.donationModel
                 .find(filter)
+                .populate('userId', 'username fullName') // 🔥 Móc data User vào đây
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
