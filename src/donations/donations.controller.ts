@@ -59,9 +59,10 @@ export class DonationsController {
     // =========================================================================
     @Get('vnpay-return')
     @ApiOperation({ summary: 'Hứng kết quả redirect từ VNPAY' })
-    vnpayReturn(@Query() query: any, @Res() res: Response) {
-        const result = this.donationsService.verifyReturnUrl(query);
+    async vnpayReturn(@Query() query: any, @Res() res: Response) {
 
+        // 👇 Thêm await vào đây
+        const result = await this.donationsService.verifyReturnUrl(query);
         if (result.isSuccess) {
             return res.status(HttpStatus.OK).json({
                 message: 'GIAO DỊCH THÀNH CÔNG',

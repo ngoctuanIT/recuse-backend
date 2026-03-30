@@ -147,16 +147,30 @@ export class DonationsService {
     // =========================================================================
     // 2. XỬ LÝ RETURN URL
     // =========================================================================
-    verifyReturnUrl(query: Record<string, any>) {
+    // =========================================================================
+    // 2. XỬ LÝ RETURN URL
+    // =========================================================================
+    // 👇 Thêm chữ async vào đây
+    async verifyReturnUrl(query: Record<string, any>) {
         const { isValid, params } = this.verifySignature(query);
 
         if (!isValid) {
             return { isSuccess: false, message: 'Chữ ký không hợp lệ' };
         }
 
-        if (params['vnp_ResponseCode'] === '00') {
+        const orderId = params['vnp_TxnRef'];
+        const rspCode = params['vnp_ResponseCode'];
+
+        // Nếu thành công (00), trả về cho FE biết (việc update DB để IPN ngầm lo)
+        if (rspCode === '00') {
             return { isSuccess: true, message: 'Thanh toán thành công' };
         }
+
+        // 👇 THÊM MỚI: Nếu khách bấm Hủy (thường là mã 24) hoặc lỗi khác -> Cập nhật DB thành FAILED luôn
+        await this.donationModel.updateOne(
+            { orderId, status: DonationStatus.PENDING }, // Chỉ update nếu đang PENDING
+            { status: DonationStatus.FAILED }
+        );
 
         return { isSuccess: false, message: 'Giao dịch thất bại / Bị hủy' };
     }
