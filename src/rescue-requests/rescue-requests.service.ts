@@ -5,7 +5,7 @@ import { Model, Types } from 'mongoose';
 // --- IMPORT DTO ---
 import { CreateRescueRequestDto } from './dto/create-rescue-request.dto';
 import { QueryRescueRequestDto } from './dto/query-rescue-request.dto';
-import { UpdateStatusDto, RequestStatus } from './dto/update-status.dto'; // Cập nhật import RequestStatus
+import { UpdateStatusDto, RequestStatus } from './dto/update-status.dto';
 import { AssignRequestDto } from './dto/assign-request.dto';
 import { CancelRescueRequestDto } from './dto/cancel-request.dto';
 
@@ -26,6 +26,21 @@ export class RescueRequestsService {
     private counterService: CountersService,
   ) { }
 
+  // 🚀 BIẾN DÙNG CHUNG: Nested Populate thần thánh giúp code gọn gàng
+  private readonly fullPopulateOptions = [
+    { path: 'userId', select: 'fullName phone' },
+    {
+      path: 'assignedTeamId',
+      select: 'teamName status vehicles',
+      populate: { path: 'vehicles', model: 'Vehicle', select: 'name plateNumber type capacity' }
+    },
+    {
+      path: 'allocatedSupplies.inventoryId',
+      model: 'Inventory',
+      select: 'itemName unit'
+    }
+  ];
+
   // =========================================================================
   // 1. CÁC HÀM TẠO VÀ LẤY DANH SÁCH CƠ BẢN
   // =========================================================================
@@ -42,7 +57,7 @@ export class RescueRequestsService {
       status: 'PENDING',
       location: {
         type: 'Point',
-        coordinates: [createDto.longitude, createDto.latitude], // [Kinh độ, Vĩ độ]
+        coordinates: [createDto.longitude, createDto.latitude],
       },
     });
 
@@ -65,8 +80,7 @@ export class RescueRequestsService {
   async findAll() {
     return this.rescueRequestModel
       .find()
-      .populate('userId', 'fullName phone')
-      .populate('assignedTeamId', 'teamName')
+      .populate(this.fullPopulateOptions) // 👈 Áp dụng Nested Populate
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -75,7 +89,6 @@ export class RescueRequestsService {
   // 2. CÁC HÀM LUỒNG NGHIỆP VỤ CỐT LÕI
   // =========================================================================
 
-  // [COORDINATOR] Xác minh mức độ khẩn cấp của đơn
   async verifyRequest(id: string, urgencyLevel: string) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Định dạng ID không hợp lệ');
 
@@ -90,7 +103,7 @@ export class RescueRequestsService {
     return updated;
   }
 
-  // [COORDINATOR] Phân công Đội, Xe và Vật tư (Luồng Dispatch)
+  // [COORDINATOR] Phân công Đội, Xe và Vật tư
   async assignTeam(id: string, assignDto: AssignRequestDto) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Định dạng ID không hợp lệ');
 
@@ -103,12 +116,25 @@ export class RescueRequestsService {
     const team = await this.rescueTeamModel.findById(assignDto.teamId);
     if (!team) throw new NotFoundException('Không tìm thấy Đội cứu hộ');
 
+    // 1. Xử lý xe cộ (Gán xe vào Đội)
     if (assignDto.vehicleId) {
       const vehicle = await this.vehicleModel.findById(assignDto.vehicleId);
       if (!vehicle) throw new NotFoundException('Không tìm thấy phương tiện');
-      await this.vehicleModel.findByIdAndUpdate(assignDto.vehicleId, { status: 'IN_USE' });
+
+      // Update xe
+      await this.vehicleModel.findByIdAndUpdate(assignDto.vehicleId, {
+        status: 'IN_USE', assignedTeamId: assignDto.teamId
+      });
+      // Bổ sung xe vào mảng vehicles của Đội
+      await this.rescueTeamModel.findByIdAndUpdate(assignDto.teamId, {
+        status: 'BUSY',
+        $addToSet: { vehicles: assignDto.vehicleId }
+      });
+    } else {
+      await this.rescueTeamModel.findByIdAndUpdate(assignDto.teamId, { status: 'BUSY' });
     }
 
+    // 2. Xử lý trừ kho Vật tư
     if (assignDto.supplies && assignDto.supplies.length > 0) {
       for (const item of assignDto.supplies) {
         const inventory = await this.inventoryModel.findById(item.inventoryId);
@@ -122,19 +148,17 @@ export class RescueRequestsService {
       }
     }
 
-    await this.rescueTeamModel.findByIdAndUpdate(assignDto.teamId, { status: 'BUSY' });
-
+    // 3. Cập nhật Ca cứu hộ
     const updatedRequest = await this.rescueRequestModel.findByIdAndUpdate(
       id,
       {
         assignedTeamId: assignDto.teamId,
-        vehicleId: assignDto.vehicleId,
-        supplies: assignDto.supplies,
+        allocatedSupplies: assignDto.supplies, // 👈 Lưu vào đúng trường đã tạo ở Schema
         status: 'ASSIGNED'
       },
       { returnDocument: 'after' }
     )
-      .populate('assignedTeamId')
+      .populate(this.fullPopulateOptions) // 👈 Áp dụng Nested Populate
       .exec();
 
     return {
@@ -143,18 +167,15 @@ export class RescueRequestsService {
     };
   }
 
-  // [TEAM] Cập nhật tiến độ cứu hộ (VD: Đang di chuyển, Đang tiếp cận...)
   async updateStatus(id: string, updateStatusDto: UpdateStatusDto) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Định dạng ID không hợp lệ');
 
     const updateData: any = { status: updateStatusDto.status };
 
-    // 🛡️ CHỐT CHẶN SENIOR: Xử lý logic theo từng trạng thái cụ thể
     if (updateStatusDto.status === RequestStatus.COMPLETED) {
-      updateData.evidenceImage = updateStatusDto.evidenceImage; // Lưu ảnh chứng thực
-      updateData.completedAt = new Date(); // Chốt giờ hoàn thành
-
-      // Bonus: Ở thực tế, chỗ này có thể thêm code để tự động set trạng thái Đội Cứu Hộ từ BUSY về AVAILABLE
+      updateData.evidenceImage = updateStatusDto.evidenceImage;
+      updateData.completedAt = new Date();
+      // Bonus: Logic giải phóng Đội và Xe về trạng thái AVAILABLE có thể thêm ở đây
     }
 
     if (updateStatusDto.status === RequestStatus.CANCELLED) {
@@ -169,11 +190,9 @@ export class RescueRequestsService {
     return updatedRequest;
   }
 
-  // [CITIZEN] Xác nhận đã an toàn (Đóng đơn)
   async confirmRescued(id: string, userId: string) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Định dạng ID không hợp lệ');
 
-    // Chú ý: Đã đổi citizenId thành userId cho khớp với Schema của bạn
     const request = await this.rescueRequestModel.findOne({ _id: id, userId: userId });
 
     if (!request) {
@@ -181,39 +200,33 @@ export class RescueRequestsService {
     }
 
     request.status = 'COMPLETED';
-    request.completedAt = new Date(); // Đóng mộc thời gian lúc nạn nhân báo an toàn
+    request.completedAt = new Date();
     return request.save();
   }
 
-  // [CITIZEN/ADMIN] Hủy đơn cứu hộ (Khi chưa có đội tiếp cận)
   async cancel(id: string, userId: string, userRole: string, cancelDto: CancelRescueRequestDto) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('ID không hợp lệ');
 
-    // 1. Build bộ lọc an toàn
     const filter: any = {
       _id: id,
-      status: 'PENDING' // Chặn cứng: Chỉ cho phép hủy khi đang PENDING
+      status: 'PENDING'
     };
 
-    // Nếu là Citizen, ép buộc phải đúng chủ nhân mới được hủy. Đổi citizenId thành userId
     if (userRole === 'CITIZEN') {
       filter.userId = userId;
     }
 
-    // 2. Thực thi Atomic Update
     const canceledRequest = await this.rescueRequestModel.findOneAndUpdate(
       filter,
       {
         $set: {
-          status: 'CANCELLED', // Lưu ý: Sửa 'CANCELED' thành 'CANCELLED' cho khớp với Enum
+          status: 'CANCELLED',
           cancelReason: cancelDto.cancelReason,
-          // Bỏ canceledAt vì dùng createdAt/updatedAt là đủ tracking, hoặc bạn có thể thêm lại nếu muốn
         }
       },
       { new: true }
     );
 
-    // 3. Bắt lỗi logic
     if (!canceledRequest) {
       throw new BadRequestException(
         'Không thể hủy yêu cầu! Yêu cầu không tồn tại, bạn không có quyền, hoặc Đội cứu hộ đã xuất phát.'
@@ -232,8 +245,7 @@ export class RescueRequestsService {
 
     const request = await this.rescueRequestModel
       .findById(id)
-      .populate('userId', 'fullName phone')
-      .populate('assignedTeamId')
+      .populate(this.fullPopulateOptions) // 👈 Áp dụng Nested Populate
       .exec();
 
     if (!request) throw new NotFoundException('Không tìm thấy yêu cầu cứu hộ');
@@ -243,6 +255,7 @@ export class RescueRequestsService {
   async findMyRequests(userId: string) {
     return this.rescueRequestModel
       .find({ userId: userId })
+      .populate(this.fullPopulateOptions) // 👈 Áp dụng Nested Populate
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -251,7 +264,7 @@ export class RescueRequestsService {
     return this.rescueRequestModel
       .find({ assignedTeamId: teamId })
       .sort({ createdAt: -1 })
-      .populate('userId', 'fullName phone location description images')
+      .populate(this.fullPopulateOptions) // 👈 Áp dụng Nested Populate
       .exec();
   }
 }

@@ -16,7 +16,6 @@ export class RescueRequest {
     @Prop({ required: true })
     description: string;
 
-    // Ảnh người dân chụp lúc báo nạn
     @Prop([String])
     images: string[];
 
@@ -32,19 +31,25 @@ export class RescueRequest {
     @Prop({ default: 'LOW', enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] })
     urgencyLevel: string;
 
-    // 👇 1. BỔ SUNG: Ảnh chứng thực do Đội cứu hộ chụp khi báo cáo COMPLETED
+    // 👇 THÊM MỚI: Mảng lưu vết vật tư xuất kho (Inventory)
+    @Prop([{
+        inventoryId: { type: MongooseSchema.Types.ObjectId, ref: 'Inventory', required: true },
+        quantity: { type: Number, required: true, min: 1 }
+    }])
+    allocatedSupplies: {
+        inventoryId: Types.ObjectId;
+        quantity: number;
+    }[];
+
     @Prop()
     evidenceImage: string;
 
-    // 👇 2. BỔ SUNG: Lý do hủy ca cứu hộ (Bắt buộc điền nếu status là CANCELLED)
     @Prop()
     cancelReason: string;
 
-    // 👇 3. BỔ SUNG: Dấu mốc thời gian hoàn thành nhiệm vụ (Phục vụ đo lường KPI/Thống kê)
     @Prop({ type: Date })
     completedAt: Date;
 
-    // KHÓA CHẶT TỌA ĐỘ
     @Prop(raw({
         type: {
             type: String,
@@ -65,7 +70,5 @@ export class RescueRequest {
 
 export const RescueRequestSchema = SchemaFactory.createForClass(RescueRequest);
 
-// Index hoàn hảo cho việc tìm kiếm bán kính
 RescueRequestSchema.index({ location: '2dsphere' });
-// Index phụ: Giúp Admin lọc nhanh các ca theo trạng thái và thời gian
 RescueRequestSchema.index({ status: 1, createdAt: -1 });
