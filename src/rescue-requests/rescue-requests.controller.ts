@@ -127,8 +127,8 @@ export class RescueRequestsController {
     @Body(new ValidationPipe({ whitelist: true })) cancelDto: CancelRescueRequestDto,
     @Req() req: any // Lấy thông tin user từ JWT
   ) {
-    const userId = req.user.userId;
-    const userRole = req.user.role;
+    const userId = req.user?.sub;
+    const userRole = req.user?.role;
     return this.rescueRequestsService.cancel(id, userId, userRole, cancelDto);
   }
 }

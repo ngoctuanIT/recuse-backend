@@ -8,18 +8,18 @@ actor "VNPay (External)" as vnpay
 rectangle "He Thong Rescue AID - CITIZEN" {
   usecase "Dang ky tai khoan" as UC1
   usecase "Dang nhap" as UC2
-  usecase "Xem ho so ca nhan" as UC3
-  usecase "Cap nhat thong tin" as UC4
-  usecase "Doi mat khau" as UC5
-  usecase "Gui yeu cau cuu ho" as UC6
-  usecase "Xem lich su yeu cau" as UC7
-  usecase "Xem chi tiet yeu cau" as UC8
-  usecase "Xac nhan da an toan" as UC9
-  usecase "Huy yeu cau cuu ho" as UC10
-  usecase "Tao link thanh toan VNPay" as UC11
-  usecase "Xem lich su quyen gop" as UC12
-  usecase "Xac nhan ket qua thanh toan" as UC13
-  usecase "Webhook IPN tu dong" as UC14
+  usecase "Kiem tra token" as UC3
+  usecase "Xem ho so ca nhan" as UC4
+  usecase "Cap nhat thong tin" as UC5
+  usecase "Doi mat khau" as UC6
+  usecase "Gui yeu cau cuu ho" as UC7
+  usecase "Xem lich su yeu cau cua ban than" as UC8
+  usecase "Xem chi tiet yeu cau" as UC9
+  usecase "Xac nhan da an toan (confirm-rescued)" as UC10
+  usecase "Huy yeu cau cuu ho" as UC11
+  usecase "Tao link thanh toan VNPay" as UC12
+  usecase "Xem lich su quyen gop ca nhan" as UC13
+  usecase "VNPay Return URL (hien thi ket qua)" as UC14
 }
 
 citizen --> UC1
@@ -36,8 +36,7 @@ citizen --> UC11
 citizen --> UC12
 citizen --> UC13
 
-vnpay --> UC13
 vnpay --> UC14
 
-UC11 .> UC13 : <<include>>
+UC12 .> UC14 : <<include>>
 @enduml

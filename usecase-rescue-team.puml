@@ -5,19 +5,27 @@ skinparam packageStyle rectangle
 actor "Doi Cuu Ho (Rescue Team)" as team
 
 rectangle "He Thong Rescue AID - RESCUE TEAM" {
+  ' === AUTH & PROFILE ===
   usecase "Dang nhap" as UC1
   usecase "Xem ho so ca nhan" as UC2
   usecase "Cap nhat thong tin" as UC3
   usecase "Doi mat khau" as UC4
+
+  ' === NHIEM VU CUU HO ===
   usecase "Radar: Tim yeu cau gan vi tri" as UC5
-  usecase "Xem nhiem vu duoc phan cong" as UC6
-  usecase "Xem chi tiet yeu cau" as UC7
-  usecase "Cap nhat tien do cuu ho" as UC8
-  usecase "Xem danh sach doi cuu ho" as UC9
-  usecase "Xem chi tiet doi minh" as UC10
-  usecase "Cap nhat vi tri GPS" as UC11
-  usecase "Cap nhat trang thai doi" as UC12
-  usecase "Xem kho hang (chi doc)" as UC13
+  usecase "Xem nhiem vu duoc phan cong (assigned-tasks)" as UC6
+  usecase "Xem chi tiet yeu cau cuu ho" as UC7
+  usecase "Cap nhat tien do cuu ho (IN_PROGRESS / COMPLETED)" as UC8
+  usecase "Upload anh chung thuc khi hoan thanh" as UC9
+
+  ' === QUAN LY DOI MINH ===
+  usecase "Xem danh sach doi cuu ho" as UC10
+  usecase "Xem chi tiet mot doi cu the" as UC11
+  usecase "Cap nhat vi tri GPS" as UC12
+  usecase "Cap nhat trang thai doi (AVAILABLE / OFFLINE)" as UC13
+
+  ' === KHO HANG (CHI DOC) ===
+  usecase "Xem kho hang (chi doc)" as UC14
 }
 
 team --> UC1
@@ -33,6 +41,8 @@ team --> UC10
 team --> UC11
 team --> UC12
 team --> UC13
+team --> UC14
 
 UC6 .> UC8 : <<include>>
+UC8 .> UC9 : <<extend>>
 @enduml

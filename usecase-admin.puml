@@ -5,36 +5,53 @@ skinparam packageStyle rectangle
 actor "Quan Tri (Admin)" as admin
 
 rectangle "He Thong Rescue AID - ADMIN" {
+  ' === AUTH & PROFILE ===
   usecase "Dang nhap" as UC1
   usecase "Xem ho so ca nhan" as UC2
   usecase "Cap nhat thong tin" as UC3
   usecase "Doi mat khau" as UC4
+
+  ' === QUAN LY NGUOI DUNG ===
   usecase "Xem danh sach nguoi dung" as UC5
   usecase "Tim user qua so dien thoai" as UC6
   usecase "Cap quyen (Doi Role)" as UC7
-  usecase "Vo hieu hoa tai khoan" as UC8
+  usecase "Vo hieu hoa tai khoan (xoa mem)" as UC8
+
+  ' === QUAN LY YEU CAU CUU HO ===
   usecase "Xem tat ca yeu cau cuu ho" as UC9
-  usecase "Xac minh & Phan loai khan cap" as UC10
-  usecase "Phan cong doi cuu ho" as UC11
-  usecase "Huy yeu cau cuu ho" as UC12
-  usecase "Tao doi cuu ho moi" as UC13
-  usecase "Xem danh sach doi" as UC14
-  usecase "Cap nhat thong tin doi" as UC15
-  usecase "Giai tan doi" as UC16
-  usecase "Them/Xoa thanh vien doi" as UC17
-  usecase "Cap/Thu hoi phuong tien doi" as UC18
-  usecase "Them phuong tien moi" as UC19
-  usecase "Xem danh sach phuong tien" as UC20
-  usecase "Cap nhat thong tin xe" as UC21
-  usecase "Cap nhat tinh trang xe" as UC22
-  usecase "Thanh ly xe" as UC23
-  usecase "Them vat pham vao kho" as UC24
-  usecase "Xem kho hang" as UC25
-  usecase "Sua thong tin vat pham" as UC26
-  usecase "Nhap / Xuat kho" as UC27
-  usecase "Ngung cung cap vat pham" as UC28
-  usecase "Xem danh sach quyen gop" as UC29
-  usecase "Xem chi tiet don quyen gop" as UC30
+  usecase "Xem chi tiet yeu cau" as UC10
+  usecase "Xac minh & Phan loai khan cap" as UC11
+  usecase "Phan cong doi cuu ho" as UC12
+  usecase "Huy yeu cau cuu ho" as UC13
+
+  ' === QUAN LY DOI CUU HO ===
+  usecase "Tao doi cuu ho moi" as UC14
+  usecase "Xem danh sach doi" as UC15
+  usecase "Xem doi dang ranh" as UC16
+  usecase "Cap nhat thong tin doi" as UC17
+  usecase "Giai tan doi" as UC18
+  usecase "Them thanh vien vao doi" as UC19
+  usecase "Xoa thanh vien khoi doi" as UC20
+  usecase "Cap phuong tien cho doi" as UC21
+  usecase "Thu hoi phuong tien doi" as UC22
+  usecase "Cap nhat trang thai doi" as UC23
+
+  ' === QUAN LY PHUONG TIEN ===
+  usecase "Xem danh sach phuong tien" as UC24
+  usecase "Xem xe dang ranh" as UC25
+  usecase "Cap nhat tinh trang xe" as UC26
+  usecase "Thanh ly xe (xoa mem)" as UC27
+
+  ' === QUAN LY KHO HANG ===
+  usecase "Them vat pham vao kho" as UC28
+  usecase "Xem kho hang" as UC29
+  usecase "Sua thong tin vat pham" as UC30
+  usecase "Nhap / Xuat kho" as UC31
+  usecase "Ngung cung cap vat pham (xoa mem)" as UC32
+
+  ' === QUAN LY QUYEN GOP ===
+  usecase "Xem danh sach quyen gop" as UC33
+  usecase "Xem chi tiet don quyen gop" as UC34
 }
 
 admin --> UC1
@@ -67,6 +84,10 @@ admin --> UC27
 admin --> UC28
 admin --> UC29
 admin --> UC30
+admin --> UC31
+admin --> UC32
+admin --> UC33
+admin --> UC34
 
-UC10 .> UC11 : <<include>>
+UC11 .> UC12 : <<include>>
 @enduml

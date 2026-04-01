@@ -3,9 +3,9 @@ title Quy trinh Cap Nhat Trang Thai Doi (updateStatus)
 
 start
 
-:Nhan request cap nhat trang thai\n(teamId, newStatus, userRole);
-:Kiem tra ID hop le?;
-if (ID sai?) then (Co)
+:Nhan request cap nhat trang thai\\n(teamId, newStatus, userRole);
+:Kiem tra dinh dang ID hop le?;
+if (ID sai dinh dang?) then (Co)
   :Tra ve loi 400;
   stop
 else (OK)
@@ -18,12 +18,18 @@ if (Khong tim thay?) then (Co)
 else (Tim thay)
 endif
 
+note right
+  Cac trang thai hop le:
+  AVAILABLE | BUSY | OFFLINE
+end note
+
 :Kiem tra Business Rule;
-if (Team dang BUSY\nva muon chuyen sang khac BUSY?) then (Co)
-  if (Role la ADMIN / COORDINATOR / MANAGER?) then (Khong)
-    :Tra ve loi 409\n"Doi dang BUSY!\nHoan thanh nhiem vu truoc";
+if (Team dang BUSY\\nva muon chuyen sang trang thai khac BUSY?) then (Co)
+  if (Role la ADMIN / COORDINATOR / MANAGER?) then (Co)
+    note right: Admin/Coordinator/Manager\\ncó quyền override BUSY
+  else (Khong - la RESCUE_TEAM)
+    :Tra ve loi 409\\n"Doi dang BUSY!\\nHoan thanh nhiem vu truoc khi chuyen trang thai";
     stop
-  else (Co quyen)
   endif
 else (Binh thuong)
 endif

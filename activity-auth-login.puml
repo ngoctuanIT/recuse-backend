@@ -1,29 +1,36 @@
 @startuml Activity_Auth_Login
-title Quy trinh Dang Nhap (signIn)
+title Quy trinh Dang Nhap (POST /auth/login)
 
 start
 
-:Nhan request dang nhap (phone, password);
+:Nhan request dang nhap\\n{ phone, password };
 
-:Tim User theo so dien thoai;
-if (User ton tai?) then (Khong)
-  :Tra ve loi 401\n"SDT hoac mat khau khong chinh xac";
+:Tim User trong DB theo so dien thoai;
+if (User khong ton tai?) then (Co)
+  :Tra ve loi 401\\n"SDT hoac mat khau khong chinh xac";
   stop
-else (Co)
+else (Tim thay)
 endif
 
-:So sanh mat khau voi bcrypt.compare();
-if (Mat khau khop?) then (Khong)
-  :Tra ve loi 401\n"SDT hoac mat khau khong chinh xac";
+:Kiem tra tai khoan bi vo hieu hoa?;
+if (User.isActive == false?) then (Co)
+  :Tra ve loi 401\\n"Tai khoan da bi vo hieu hoa";
   stop
-else (Co)
+else (Dang hoat dong)
 endif
 
-:Tao JWT payload\n{ sub, phone, username, role, userCode };
+:So sanh mat khau voi bcrypt.compare(password, user.passwordHash);
+if (Mat khau khong khop?) then (Co)
+  :Tra ve loi 401\\n"SDT hoac mat khau khong chinh xac";
+  stop
+else (Khop)
+endif
 
-:Ky JWT Token (jwtService.signAsync);
+:Tao JWT payload:\\n{ sub: user._id, phone, username: fullName, role, userCode };
 
-:Tra ve ket qua:\n{ access_token, user: { _id, userCode, fullName, phone, role } };
+:Ky JWT Token (jwtService.signAsync) voi secret tu .env;
+
+:Tra ve ket qua:\\n{ access_token, user: { _id, userCode, fullName, phone, role } };
 
 stop
 @enduml

@@ -4,75 +4,83 @@ title Quy trinh Yeu Cau Cuu Ho (Toan Bo Luong)
 start
 
 partition "CITIZEN - Gui Yeu Cau" {
-  :Citizen gui yeu cau\n(description, images, lat, lng);
+  :Citizen gui yeu cau\\n(description, images[], lat, lng);
   :Goi CountersService.getNextSequence('rescue_request');
   :Tao requestCode = RD-0001;
-  :Luu RescueRequest vao DB\n{ status: PENDING, location: GeoJSON Point };
+  :Luu RescueRequest vao DB\\n{ status: PENDING, urgencyLevel: LOW, location: GeoJSON Point };
   :Tra ve yeu cau vua tao;
 }
 
 partition "COORDINATOR - Xac Minh" {
-  :Coordinator xem danh sach yeu cau;
+  :Coordinator xem danh sach tat ca yeu cau;
   :Chon yeu cau can xac minh;
-  :Xac minh va dat muc do khan cap\n(LOW / MEDIUM / HIGH / CRITICAL);
+  :Xac minh va dat muc do khan cap\\n(LOW / MEDIUM / HIGH / CRITICAL);
   :Cap nhat status: PENDING -> VERIFIED;
 }
 
 partition "COORDINATOR - Phan Cong (Dispatch)" {
-  :Coordinator chon doi cuu ho;
-  :Kiem tra status Request\n(phai la PENDING hoac VERIFIED)?;
-  if (Da duoc xu ly?) then (Co)
-    :Tra ve loi 400\n"Don da duoc xu ly!";
+  :Coordinator chon doi cuu ho va gui\\nAssignRequestDto { teamId, vehicleId?, supplies[] };
+
+  :Kiem tra status Request\\n(phai la PENDING hoac VERIFIED)?;
+  if (Da duoc xu ly / ASSIGNED / IN_PROGRESS / COMPLETED / CANCELLED?) then (Co)
+    :Tra ve loi 400\\n"Don da duoc xu ly!";
     stop
   else (Chua)
   endif
 
-  :Kiem tra Doi ton tai?;
+  :Kiem tra Doi ton tai va dang hoat dong?;
   if (Doi khong ton tai?) then (Co)
     :Tra ve loi 404;
     stop
   else (OK)
   endif
 
-  if (Co cap phuong tien?) then (Co)
-    :Kiem tra Vehicle ton tai?;
+  if (Co cap vehicleId?) then (Co)
+    :Tim xe theo { _id: vehicleId, status: AVAILABLE, isActive: true };
+    if (Xe khong ranh / khong ton tai?) then (Co)
+      :Tra ve loi 400\\n"Xe khong san sang";
+      stop
+    else (OK)
+    endif
     :Cap nhat Vehicle.status = IN_USE;
   else (Khong)
   endif
 
-  if (Co cap vat tu?) then (Co)
-    :Lap qua tung vat tu;
-    :Kiem tra so luong ton kho du?;
+  if (Co cap supplies[]?) then (Co)
+    :Lap qua tung vat tu trong supplies;
+    :Kiem tra ton kho >= so luong yeu cau?;
     if (Kho khong du?) then (Co)
-      :Tra ve loi 400\n"Kho khong du!";
+      :Tra ve loi 400\\n"Kho khong du!";
       stop
-    else (Enough)
+    else (Du)
     endif
     :Tru kho: inventory.quantity -= so luong;
+    :Luu allocatedSupplies vao Request;
   else (Khong)
   endif
 
   :Cap nhat Team.status = BUSY;
-  :Cap nhat Request:\n{ assignedTeamId, status: ASSIGNED };
+  :Cap nhat Request:\\n{ assignedTeamId, status: ASSIGNED };
 }
 
 partition "RESCUE_TEAM - Thuc Hien" {
-  :Rescue Team nhan nhiem vu;
-  :Cap nhat tien do:\nstatus = IN_PROGRESS;
-  :Di chuyen den hien truong\n(Cap nhat GPS lien tuc);
+  :Rescue Team xem nhiem vu (GET assigned-tasks);
+  :Cap nhat tien do:\\nPATCH :id/status { status: IN_PROGRESS };
+  :Di chuyen den hien truong\\n(Cap nhat GPS lien tuc PATCH :id/location);
   :Hoan thanh cuu ho;
-  :Bao cao hoan thanh:\nstatus = COMPLETED\n+ evidenceImage + completedAt;
+  :Bao cao hoan thanh:\\nPATCH :id/status\\n{ status: COMPLETED, evidenceImage: url };
 }
 
 partition "CITIZEN - Xac Nhan" {
-  :Citizen xac nhan da an toan;
-  :Kiem tra request thuoc ve Citizen nay?;
+  :Citizen nhan thong bao va xac nhan da an toan;
+  :PATCH :id/confirm-rescued;
+  :Kiem tra request.userId == userId dang dang nhap?;
   if (Khong phai chu nhan?) then (Co)
     :Tra ve loi 404;
     stop
   else (Dung)
   endif
-  :Cap nhat status = COMPLETED\n+ completedAt;
+  :Cap nhat status = COMPLETED + completedAt;
 }
 
 :Ket thuc luong cuu ho;

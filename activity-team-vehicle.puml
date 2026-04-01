@@ -1,41 +1,45 @@
 @startuml Activity_Team_Vehicle_Transaction
 title Quy trinh Cap / Thu Hoi Phuong Tien cho Doi (Co Transaction)
 
+note right
+  Roles duoc phep: ADMIN, MANAGER, COORDINATOR
+end note
+
 start
 
 :Nhan request (teamId, vehicleId);
 :Kiem tra dinh dang ID hop le?;
-if (ID khong hop le?) then (Co)
+if (ID khong dung dinh dang MongoDB?) then (Co)
   :Tra ve loi 400;
   stop
 else (OK)
 endif
 
-partition "addVehicle - Cap phuong tien" {
+partition "addVehicle - Cap phuong tien cho doi" {
   :Bat dau MongoDB Session;
   :startTransaction();
 
-  :Tim xe theo:\n{ _id: vehicleId, status: AVAILABLE, isActive: true };
-  if (Xe khong ranh / khong ton tai?) then (Co)
+  :Tim xe theo:\\n{ _id: vehicleId, status: AVAILABLE, isActive: true };
+  if (Xe khong ton tai / da dung / da thanh ly?) then (Co)
     :abortTransaction();
-    :Tra ve loi 400\n"Xe khong ton tai, hong, hoac doi khac lay roi";
+    :Tra ve loi 400\\n"Xe khong ton tai, hong, hoac doi khac da cap roi";
     stop
-  else (Co xe)
+  else (Co xe san sang)
   endif
 
-  :Cap nhat Vehicle:\n{ status: IN_USE, assignedTeamId: teamId };
+  :Cap nhat Vehicle:\\n{ status: IN_USE, assignedTeamId: teamId };
 
-  :Them xe vao doi:\n$addToSet vehicles: vehicleId;
-  if (Doi khong ton tai?) then (Co)
+  :Them xe vao danh sach doi:\\n$addToSet vehicles: vehicleId;
+  if (Doi khong ton tai hoac da giai tan?) then (Co)
     :abortTransaction();
-    :Tra ve loi 404;
+    :Tra ve loi 404\\n"Doi khong ton tai";
     stop
   else (OK)
   endif
 
   :commitTransaction();
   :endSession();
-  :Tra ve thong tin doi + danh sach xe;
+  :Tra ve thong tin doi + danh sach vehicles hien tai;
 }
 
 stop
@@ -48,21 +52,21 @@ partition "removeVehicle - Thu hoi phuong tien" {
   :Bat dau MongoDB Session;
   :startTransaction();
 
-  :Tim xe theo:\n{ _id: vehicleId, assignedTeamId: teamId };
-  if (Xe khong thuoc doi nay?) then (Co)
+  :Tim xe theo:\\n{ _id: vehicleId, assignedTeamId: teamId };
+  if (Xe khong thuoc doi nay hoac khong ton tai?) then (Co)
     :abortTransaction();
-    :Tra ve loi 400\n"Xe khong thuoc quyen quan ly cua doi";
+    :Tra ve loi 400\\n"Xe khong thuoc quyen quan ly cua doi nay";
     stop
   else (Dung xe)
   endif
 
-  :Tra xe ve kho:\n{ status: AVAILABLE, assignedTeamId: null };
+  :Tra xe ve kho:\\n{ status: AVAILABLE, assignedTeamId: null };
 
-  :Xoa xe khoi danh sach doi:\n$pull vehicles: vehicleId;
+  :Xoa xe khoi danh sach doi:\\n$pull vehicles: vehicleId;
 
   :commitTransaction();
   :endSession();
-  :Tra ve danh sach xe con lai;
+  :Tra ve danh sach vehicles con lai cua doi;
 }
 
 stop

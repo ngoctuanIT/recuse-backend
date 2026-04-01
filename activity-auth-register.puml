@@ -1,26 +1,26 @@
 @startuml Activity_Auth_Register
-title Quy trinh Dang Ky Tai Khoan (signUp)
+title Quy trinh Dang Ky Tai Khoan (POST /auth/register)
 
 start
 
-:Nhan request dang ky (phone, password, fullName);
+:Nhan request dang ky\\n(phone, password, fullName);
 
-:Kiem tra so dien thoai da ton tai?;
-if (Phone da ton tai?) then (Co)
-  :Tra ve loi 400\n"So DT da duoc dang ky!";
+:Kiem tra so dien thoai da ton tai trong DB?;
+if (Phone da duoc dang ky?) then (Co)
+  :Tra ve loi 400\\n"So dien thoai da duoc dang ky!";
   stop
-else (Chua)
+else (Chua ton tai)
 endif
 
-:Hash mat khau voi bcrypt;
+:Hash mat khau voi bcrypt (saltRounds = 10);
 
-:Goi CountersService.getNextSequence('user')\nLay so thu tu tang tu dong;
+:Goi CountersService.getNextSequence('user')\\nLay so thu tu tu dong tu collection counters;
 
-:Tao userCode = USR-00001;
+:Tao userCode = USR-00001 (5 chu so, can 0);
 
-:Luu User moi vao MongoDB;
+:Luu User moi vao MongoDB:\\n{ phone, fullName, passwordHash, userCode, role: CITIZEN };
 
-:Tra ve ket qua:\n{ message, userCode, phone };
+:Tra ve ket qua:\\n{ message, userCode, phone };
 
 stop
 @enduml

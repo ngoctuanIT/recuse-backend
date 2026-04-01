@@ -1,11 +1,15 @@
 @startuml Activity_Team_Dissolve
 title Quy trinh Giai Tan Doi Cuu Ho (remove - Soft Delete + Cascading)
 
+note right
+  Roles duoc phep: ADMIN, MANAGER
+end note
+
 start
 
 :Nhan request giai tan doi (teamId);
 :Kiem tra ID hop le?;
-if (ID sai?) then (Co)
+if (ID sai dinh dang MongoDB?) then (Co)
   :Tra ve loi 400;
   stop
 else (OK)
@@ -14,10 +18,10 @@ endif
 :Bat dau MongoDB Session;
 :startTransaction();
 
-:Tim doi theo { _id: id, isActive: true };
+:Tim doi theo { _id: teamId, isActive: true };
 if (Khong tim thay?) then (Co)
   :abortTransaction();
-  :Tra ve loi 404;
+  :Tra ve loi 404\\n"Doi khong ton tai hoac da bi giai tan";
   stop
 else (Tim thay)
 endif
@@ -25,22 +29,22 @@ endif
 :Kiem tra trang thai doi;
 if (Doi dang BUSY?) then (Co)
   :abortTransaction();
-  :Tra ve loi 409\n"Khong the giai tan doi dang BUSY";
+  :Tra ve loi 409\\n"Khong the giai tan doi dang BUSY\\n(Do dang thuc hien nhiem vu)";
   stop
 else (Khong BUSY)
 endif
 
-if (Doi co phuong tien?) then (Co)
-  :Thu hoi toan bo xe ve kho:\nupdateMany vehicles:\n{ status: AVAILABLE, assignedTeamId: null };
+if (Doi co danh sach vehicles khong rong?) then (Co)
+  :Thu hoi toan bo xe ve kho san sang:\\nupdateMany vehicles where _id in team.vehicles:\\n{ status: AVAILABLE, assignedTeamId: null };
 else (Khong co xe)
 endif
 
-:Xoa mem doi:\n{ isActive: false,\nstatus: OFFLINE,\nvehicles: [] };
+:Xoa mem doi:\\n{ isActive: false, status: OFFLINE, vehicles: [] };
 
 :commitTransaction();
 :endSession();
 
-:Tra ve:\n"Da giai tan doi va thu hoi phuong tien thanh cong";
+:Tra ve:\\n"Da giai tan doi va thu hoi phuong tien thanh cong";
 
 stop
 @enduml

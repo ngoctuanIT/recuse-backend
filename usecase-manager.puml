@@ -2,13 +2,16 @@
 left to right direction
 skinparam packageStyle rectangle
 
-actor "Quan Ly Kho/Xe (Manager)" as manager
+actor "Quan Ly (Manager)" as manager
 
 rectangle "He Thong Rescue AID - MANAGER" {
+  ' === AUTH & PROFILE ===
   usecase "Dang nhap" as UC1
   usecase "Xem ho so ca nhan" as UC2
   usecase "Cap nhat thong tin" as UC3
   usecase "Doi mat khau" as UC4
+
+  ' === QUAN LY DOI CUU HO ===
   usecase "Tao doi cuu ho moi" as UC5
   usecase "Xem danh sach doi" as UC6
   usecase "Xem doi dang ranh" as UC7
@@ -19,19 +22,23 @@ rectangle "He Thong Rescue AID - MANAGER" {
   usecase "Cap phuong tien cho doi" as UC12
   usecase "Thu hoi phuong tien doi" as UC13
   usecase "Cap nhat trang thai doi" as UC14
-  usecase "Them phuong tien moi" as UC15
-  usecase "Xem danh sach phuong tien" as UC16
-  usecase "Xem xe dang ranh" as UC17
-  usecase "Cap nhat thong tin xe" as UC18
-  usecase "Cap nhat tinh trang xe" as UC19
-  usecase "Thanh ly xe" as UC20
-  usecase "Them vat pham vao kho" as UC21
-  usecase "Xem kho hang" as UC22
-  usecase "Sua thong tin vat pham" as UC23
-  usecase "Nhap / Xuat kho" as UC24
-  usecase "Ngung cung cap vat pham" as UC25
-  usecase "Xem danh sach quyen gop" as UC26
-  usecase "Xem chi tiet don quyen gop" as UC27
+
+  ' === QUAN LY PHUONG TIEN ===
+  usecase "Xem danh sach phuong tien" as UC15
+  usecase "Xem xe dang ranh" as UC16
+  usecase "Cap nhat tinh trang xe" as UC17
+  usecase "Thanh ly xe (xoa mem)" as UC18
+
+  ' === QUAN LY KHO HANG ===
+  usecase "Them vat pham vao kho" as UC19
+  usecase "Xem kho hang" as UC20
+  usecase "Sua thong tin vat pham" as UC21
+  usecase "Nhap / Xuat kho" as UC22
+  usecase "Ngung cung cap vat pham (xoa mem)" as UC23
+
+  ' === QUAN LY QUYEN GOP ===
+  usecase "Xem danh sach quyen gop" as UC24
+  usecase "Xem chi tiet don quyen gop" as UC25
 }
 
 manager --> UC1
@@ -59,6 +66,4 @@ manager --> UC22
 manager --> UC23
 manager --> UC24
 manager --> UC25
-manager --> UC26
-manager --> UC27
 @enduml

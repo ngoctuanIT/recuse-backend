@@ -205,6 +205,10 @@ export class RescueRequestsService {
   }
 
   async cancel(id: string, userId: string, userRole: string, cancelDto: CancelRescueRequestDto) {
+    console.log("=== DEBUG CANCEL ===");
+    console.log("Request ID truyền vào:", id);
+    console.log("User ID từ Token:", userId);
+    console.log("User Role từ Token:", userRole);
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('ID không hợp lệ');
 
     const filter: any = {

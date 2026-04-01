@@ -1,34 +1,40 @@
 @startuml Activity_Cancel_Request
 title Quy trinh Huy Yeu Cau Cuu Ho (cancel)
 
+note right
+  Roles duoc phep: CITIZEN, COORDINATOR, ADMIN
+  Chi huy duoc khi status = PENDING
+end note
+
 start
 
-:Nhan request huy\n(id, cancelReason, role, userId);
+:Nhan request huy\\nPATCH :id/cancel\\n{ cancelReason, role, userId };
 
 :Kiem tra dinh dang ID hop le?;
-if (ID khong hop le?) then (Co)
-  :Tra ve loi 400\n"ID khong hop le";
+if (ID khong dung dinh dang MongoDB?) then (Co)
+  :Tra ve loi 400\\n"ID khong hop le";
   stop
 else (OK)
 endif
 
-:Xay dung filter:\n{ _id: id, status: 'PENDING' };
+:Xay dung filter:\\n{ _id: id, status: "PENDING" };
 
 if (Role la CITIZEN?) then (Co)
-  :Them dieu kien:\nfilter.userId = userId\n(Chi chu nhan moi huy duoc);
-else (Khong)
+  :Them dieu kien:\\nfilter.userId = userId\\n(Chi chu nhan moi huy duoc don cua minh);
+else (Khong - COORDINATOR / ADMIN)
+  note right: Coordinator va Admin\\ncó thể hủy bất kỳ đơn PENDING nào
 endif
 
-:Thuc hien Atomic Update findOneAndUpdate();
+:Thuc hien Atomic Update\\nfindOneAndUpdate(filter, { status: CANCELLED, cancelReason });
 
-if (Khong tim thay?) then (Co)
-  :Tra ve loi 400\n"Khong the huy: Khong ton tai,\nkhong co quyen, hoac doi da xuat phat";
+if (Khong tim thay thi hop le?) then (Co)
+  :Tra ve loi 400\\n"Khong the huy:\\nDon khong ton tai, khong co quyen,\\nhoac trang thai khong phai PENDING";
   stop
 else (Tim thay)
 endif
 
-:Cap nhat:\n{ status: CANCELLED, cancelReason };
-:Tra ve ket qua thanh cong;
+:Cap nhat thanh cong:\\n{ status: CANCELLED, cancelReason };
+:Tra ve thong tin yeu cau da huy;
 
 stop
 @enduml
