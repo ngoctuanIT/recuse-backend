@@ -130,7 +130,7 @@ export class RescueTeamsService {
 
     // 🛡️ CHỐT CHẶN: Đang cứu người thì không được tự ý đi ngủ
     if (team.status === TeamStatus.BUSY && newStatus !== TeamStatus.BUSY) {
-      if (userRole !== 'ADMIN' && userRole !== 'COORDINATOR' && userRole !== 'MANAGER') {
+      if (userRole !== 'ADMIN' && userRole !== 'COORDINATOR' && userRole !== 'MANAGER' && userRole !== 'RESCUE_TEAM') {
         throw new ConflictException('Đội đang thực hiện nhiệm vụ (BUSY)! Yêu cầu hoàn thành nhiệm vụ trước.');
       }
     }
